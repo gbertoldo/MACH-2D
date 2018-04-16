@@ -1,0 +1,44 @@
+                             r654 & sim_id & Simulation identification  (up to 100 characters)
+                               15 & nxi-2  & Number of real volumes in the csi direction of the coarsest grid
+                               15 & nyi-2  & Number of real volumes in the eta direction of the coarsest grid
+                                8 & nmf    & Number of the finest mesh  (1<=nmf)
+                                3 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
+"./mach2d_input/geometry_g01.txt" & fgeom  & File of the geometric parameters
+                                2 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
+                           1.0E00 & avi    & Initial value of the artificial viscosity (only for kg=5)
+                        1000.0E00 & avf    & Final value of the artificial viscosity (only for kg=5)
+                           0.3E00 & awf    & Area weighting factor (only for kg=5)
+                                1 & kcm    & Kind of centroid mean (1=simple mean, 2=weighted mean)
+                                1 & coord  & Kind of coord. system ( 1=cylindrical, 0 = cartesian)
+            0.050000000000000E+00 & cbl    & The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
+                            80000 & itmax  & Maximum number of iteractions for time cycle
+                                1 & itmmax & Maximum number of iteractions for mass cycle
+                               20 & itpmax & Maximum number of iteractions for pressure cycle
+                                5 & itemax & Maximum number of iteractions for extrapolation to fictitious
+                                5 & nitm_u & Maximum number of iteractions for solving the linear systems for u, v and T
+                               20 & nitm_p & Maximum number of iteractions for solving the linear system for p
+                           1.d-02 & tol_u  & Tolerance in the MSI for solving the linear systems for u, v and T
+                           1.d-02 & tol_p  & Tolerance in the MSI for solving the linear system for p
+                           1.d-02 & tolm   & Tolerance for the mass cycle
+                           1.d-10 & tolt   & Tolerance for the time evolution cycle
+                                1 & wlf    & Frequency of printing in the listing file
+                                1 & sem_a  & 1 = do not open result files, 0 = open
+                                1 & sem_g  & 0 = visualize the plot, 1 = do not visualize
+                                1 & w_g    & Frequency of writing data for graphics
+                                0 & w_cam  & 1 = write the fields, 0 = do not
+                                1 & wppd   & Write post processed data (0=no, 1=yes, 2=yes-simplified)
+            0.000000000000000E+00 & beta   & UDS/CDS mixing constant (0=UDS, 1=CDS)
+            1.000000000000000E-08 & dt1    & initial time step (s)
+            2.000000000000000E-05 & dt2    & final time step (s)
+                              100 & it1    & number of iteractions up to which dt = dt1
+                              600 & it2    & number of iteractions from which dt = dt2
+            0.010000000000000E+00 & h0     & Amplitude of h in the TSI11 model
+            0.700000000000000E+00 & mincc  & Minimum allowed value of the convergence coefficient
+            0.900000000000000E+00 & maxcc  & Maximum allowed value of the convergence coefficient
+                                0 & modvis & Viscosity model (0=Euler, 1=NS)
+                                0 & ktm    & Kind of thermophysical model ( 0 = constant, 1 = T dependent )
+                                1 & kfc    & Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
+           -6.167000000000000E+02 & Tsbc   & Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
+            3.000000000000000E+02 & PF     & Far field pressure (Pa)
+            3.000000000000000E+02 & TF     & Far field temperature (K)
+            8.000000000000000E+00 & MF     & Mach number of the free stream

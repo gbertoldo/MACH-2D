@@ -1,0 +1,18 @@
+                         4 & kgb      & Kind of geometry of the body 
+     3.200000000000000E+00 & la       & length of the elliptical x semi-axis (m)
+     2.000000000000000E+00 & lb       & length of the elliptical y semi-axis (m)
+     3.000000000000000E+00 & lr       & length of the body (m)
+     5.000000000000000E-01 & rb       & base radius of the body (m)
+                     'lbd' & xname(1) & Name of the unknown
+                         1 & xopt(1)  & Optimization option for the unknown ( 0 = no, 1 = yes )
+     0.500000000000000E+00 & x(1)     & Value of the unknown (this value will be used only if x_opt = 0 )
+     2.000000000000000E+00 & akn      & Exponent of the power law for the north boundary
+     2.000000000000000E+00 & aks      & Exponent of the power law for the south boundary
+
+
+This is the input parameters for the power law geometry with optimization of the exponent.
+
+ 1 = Power law; 
+ 2 = Hemisphere-cone; 
+ 3 = Hemisphere-cone-cylinder
+ 4 = Power law (Adapted for the DEPP optimizer)

@@ -1,0 +1,29 @@
+                        15 & kgb      & Kind of geometry of the body (see bellow)
+     1.500000000000000E+00 & w        & Distance between south and north boundaries (m)
+     0.400000000000000E+00 & fs       & Factor of smoothing (0<=fs) (necessary for non-smooth surfaces)
+     4.000000000000000E+00 & lo       & Length of the ogive (m)
+     2.000000000000000E+00 & lc       & Length of the cylinder (m)
+     0.500000000000000E+00 & rb       & Base radius of the body (m)
+     2.000000000000000E+00 & aks      & Exponent of the power law for the south boundary
+     0.400000000000000E+00 & flo      & Fraction of lo
+     0.650000000000000E+00 & fp1      & Fraction of volumes in the first part of the grid
+     0.200000000000000E+00 & fp2      & Fraction of volumes in the second part of the grid
+
+
+This is the input parameters for the bluff power law-cylinder geometry.
+
+ 1 = Power law; 
+ 2 = Hemisphere-cone; 
+ 3 = Hemisphere-cone-cylinder
+ 4 = Power law (Adapted for the DEPP optimizer)
+ 5 = Power law - cylinder
+ 6 = Power law - cylinder with a quadratic and power law distribution of points
+ 7 = Power law - cylinder with a geometric progression distribution of points
+ 8 = Power law - cylinder with a power law distribution of points
+ 9 = Power law - cylinder with a power law and a geometric progression distribution of points
+10 = Power law - cylinder with a power law and a geometric progression distribution of points (Adapted for the DEPP optimizer)
+11 = Bluff power law-cylinder with geometric progression distribution of points
+12 = Bluff power law-cylinder with geometric progression distribution of points based on the curve arclength (Adapted for the DEPP optimizer)
+13 = Bluff power law-cylinder with double-exp. and geometric progression distribution of points based on the curve arclength (Adapted for the DEPP optimizer)
+14 = Newton body with double-exp. and geometric progression distribution of points based on the curve arclength
+15 = Karman ogive

@@ -1,0 +1,7 @@
+                0  base  : 0 = molar; 1 = massic
+    0.010000000E0  Ar    : Argon
+    0.000000000E0  CO    : Carbon monoxide
+    0.000000000E0  CO2   : Carbon dioxide
+    0.780000000E0  N2    : Molecular nitrogen
+    0.210000000E0  O2    : Molecular oxygen
+    0.000000000E0  END

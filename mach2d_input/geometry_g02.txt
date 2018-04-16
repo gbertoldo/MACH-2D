@@ -1,0 +1,12 @@
+                         2 & kgb    & Kind of geometry of the body (1=Power law; 2=Hemisphere-cone; 3=Hemisphere-cone-cylinder)
+     1.000000000000000E+00 & la     & length of the elliptical x semi-axis (m)
+     1.000000000000000E+00 & lb     & length of the elliptical y semi-axis (m)
+     0.500000000000000E+00 & lr     & length of the body (m)
+     5.000000000000000E-01 & rb     & base radius of the body (m)
+     0.000000000000000E+00 & tht    & semi-angle of the cone (degrees)
+     2.000000000000000E+00 & akn    & Exponent of the power law for the north boundary
+     2.000000000000000E+00 & aks    & Exponent of the power law for the south boundary
+
+
+
+This is the input parameters for the hemisphere-cone geometry.

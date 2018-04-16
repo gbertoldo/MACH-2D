@@ -1,0 +1,31 @@
+Register of global variables
+
+==============================================================================================================
+INTEGERS
+========
+integer :: nx  ! Number of real + ficititious volumes in the csi direction
+Read by GetParameters from file. 
+Changed by GetParameters.
+
+integer :: ny  ! Number of real + ficititious volumes in the eta direction
+Read by GetParameters from file. 
+Changed by GetParameters.
+
+integer :: nxy ! Total number of real + fictitious volumes
+Defined by GetParameters
+
+integer :: kg  ! Kind of grid	
+Read by GetParameters from file. 
+Used by GridGen
+
+
+==============================================================================================================
+REAL(8) DIMENSION(NXY)
+======================
+real(8), allocatable, dimension(:) :: x ! X coordinate of the corner ne of each volume (real+ficititious)
+Allocated by AllocateVariables.
+Initialized by InitializeVariables.
+
+real(8), allocatable, dimension(:) :: y ! Y coordinate of the corner ne of each volume (real+ficititious)
+Allocated by AllocateVariables.
+Initialized by InitializeVariables.

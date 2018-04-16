@@ -1,0 +1,22 @@
+                         7 & kgb    & Kind of geometry of the body (see bellow)
+     0.200000000000000E+00 & lf     & Frontal length (m)
+     3.000000000000000E+00 & lb     & Base length (m)
+     4.000000000000000E+00 & lo     & length of the ogive (m)
+     2.000000000000000E+00 & lc     & length of the cylinder (m)
+     0.500000000000000E+00 & rb     & base radius of the body (m)
+     2.300000000000000E+00 & lp1    & Length of the first part ( 0 < lp1 < lo ) (m)
+     0.500000000000000E+00 & lbd    & exponent of the power law body
+     2.000000000000000E+00 & aks    & Exponent of the power law for the south boundary
+     0.600000000000000E+00 & fp1    & Fraction of volumes in the first part
+     0.200000000000000E+00 & fp2    & Fraction of volumes in the second part
+
+
+This is the input parameters for the power law-cylinder geometry.
+
+ 1 = Power law; 
+ 2 = Hemisphere-cone; 
+ 3 = Hemisphere-cone-cylinder
+ 4 = Power law (Adapted for the DEPP optimizer)
+ 5 = Power law - cylinder
+ 6 = Power law - cylinder with a quadratic and power law distribution of points
+ 7 = Power law - cylinder with a geometric progression distribution of points

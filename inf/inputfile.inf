@@ -1,0 +1,5 @@
+parameters.dat
+contains the parameters of the program
+
+boudarygrid.dat
+contains de lower and upper coordinates of the boundary

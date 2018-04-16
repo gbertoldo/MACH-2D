@@ -1,0 +1,14 @@
+                         3 & kgb    & Kind of geometry of the body (1=Power law; 2=Hemisphere-cone; 3=Hemisphere-cone-cylinder)
+     0.030000000000000E+00 & lf     & Frontal length (m)
+     0.090000000000000E+00 & lb     & Base length (m)
+     0.042678395983661E+00 & lo     & length of the ogive (m)
+     0.040000000000000E+00 & lc     & length of the cylinder (m)
+     0.015550000000000E+00 & rb     & base radius of the body (m)
+    11.000000000000000E+00 & tht    & semi-angle of the cone (degrees)
+     2.000000000000000E+00 & akn    & Exponent of the power law for the north boundary
+     2.000000000000000E+00 & aks    & Exponent of the power law for the south boundary
+    -2.200000000000000E+00 & akc    & Exponent of the power law for the south and north cylinder boundaries
+     0.650000000000000E+00 & fp1    & Fraction of volumes in the hemisphere-cone part
+
+
+This is the input parameters for the hemisphere-cone-cylinder geometry.
