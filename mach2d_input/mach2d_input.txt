@@ -1,1 +1,1 @@
-"parameters.txt"  ....: Input parameters data file
+"parametersETC.txt"  ....: Input parameters data file

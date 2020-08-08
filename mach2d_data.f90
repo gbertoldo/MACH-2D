@@ -1,7 +1,14 @@
 module data
 
+   use mod_class_ifile
 
    implicit none
+
+   !
+   ! INPUT PARAMETERS READER
+   !
+   type(class_ifile) ifile
+
    !
    ! GRID PARAMETERS AND VARIABLES
    !
@@ -273,53 +280,57 @@ contains
       read(10,*) input_file_parameters
       close(10)
 
-      open(10, file = "./mach2d_input/" // input_file_parameters)
-      read(10,*) sim_id ! Simulation identification  (up to 100 characters)
-      read(10,*) nxi    ! Number of real volumes in the csi direction of the coarsest grid
-      read(10,*) nyi    ! Number of real volumes in the eta direction of the coarsest grid
-      read(10,*) nmf    ! Number of the finest mesh  (1<=nmf)
-      read(10,*) nmd    ! Number of the desired mesh (1<=nmd<=nmf)
-      read(10,*) fgeom  ! File of the geometric parameters
-      read(10,*) kg     ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
-      read(10,*) avi    ! Initial value of the artificial viscosity (only for kg=5)
-      read(10,*) avf    ! Final value of the artificial viscosity (only for kg=5)
-      read(10,*) awf    ! Area weighting factor (only for kg=5)
-      read(10,*) kcm    ! Kind of centroid mean (1=simple mean, 2=weighted mean)
-      read(10,*) coord  ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
-      read(10,*) cbl    ! The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
-      read(10,*) itmax  ! Maximum number of iterations for time cycle
-      read(10,*) itmmax ! Maximum number of iterations for mass cycle
-      read(10,*) itpmax ! Maximum number of iteractions for pressure cycle
-      read(10,*) itemax ! Maximum number of iteractions for extrapolation to fictitious
-      read(10,*) nitm_u ! Maximum number of iteractions for solving the linear systems for u, v and T
-      read(10,*) nitm_p ! Maximum number of iteractions for solving the linear system for p
-      read(10,*) tol_u  ! Tolerance in the MSI for solving the linear systems for u, v and T
-      read(10,*) tol_p  ! Tolerance in the MSI for solving the linear system for p
-      read(10,*) tolm   ! Tolerance for the mass cycle
-      read(10,*) tolt   ! Tolerance for the time evolution cycle
-      read(10,*) wlf    ! Frequency of printing in the listing file
-      read(10,*) sem_a  ! 1 = do not open result files, 0 = open
-      read(10,*) sem_g  ! 0 = visualize the plot, 1 = do not visualize
-      read(10,*) w_g    ! Frequency of writing data for graphics
-      read(10,*) w_cam  ! 1 = write the fields, 0 = do not
-      read(10,*) wppd   ! Write post processed data (0=no, 1=yes, 2=yes-simplified)
-      read(10,*) beta   ! UDS/CDS mixing constant (0=UDS, 1=CDS)
-      read(10,*) dt1    ! initial time step (s)
-      read(10,*) dt2    ! final time step (s)
-      read(10,*) it1    ! number of iteractions up to which dt = dt1
-      read(10,*) it2    ! number of iteractions from which dt = dt2
-      read(10,*) h0     ! Amplitude of h in the TSI11 model
-      read(10,*) mincc  ! Minimum allowed value of the convergence coefficient
-      read(10,*) maxcc  ! Maximum allowed value of the convergence coefficient
-      read(10,*) modvis ! Viscosity model (0=Euler, 1=NS)
-      read(10,*) ktm    ! Kind of thermophysical model ( 0 = constant, 1 = T dependent )
-      read(10,*) kfc    ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
-      read(10,*) Tsbc   ! Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
-      read(10,*) PF     ! Far field pressure (Pa)
-      read(10,*) TF     ! Far field temperature (K)
-      read(10,*) MF     ! Mach number of the free stream
+      ! Setting up ifile
+      call ifile%init("./mach2d_input/" // trim(input_file_parameters), "&")
 
-      close(10)
+      ! Loading all parameters from input file
+      call ifile%load()
+
+      ! Getting desired parameters
+      call ifile%get_value(   sim_id,   "sim_id") ! Simulation identification  (up to 100 characters)
+      call ifile%get_value(      nxi,    "nxi-2") ! Number of real volumes in the csi direction of the coarsest grid
+      call ifile%get_value(      nyi,    "nyi-2") ! Number of real volumes in the eta direction of the coarsest grid
+      call ifile%get_value(      nmf,      "nmf") ! Number of the finest mesh  (1<=nmf)
+      call ifile%get_value(      nmd,      "nmd") ! Number of the desired mesh (1<=nmd<=nmf)
+      call ifile%get_value(    fgeom,    "fgeom") ! File of the geometric parameters
+      call ifile%get_value(       kg,       "kg") ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
+      call ifile%get_value(      avi,      "avi") ! Initial value of the artificial viscosity (only for kg=5)
+      call ifile%get_value(      avf,      "avf") ! Final value of the artificial viscosity (only for kg=5)
+      call ifile%get_value(      awf,      "awf") ! Area weighting factor (only for kg=5)
+      call ifile%get_value(      kcm,      "kcm") ! Kind of centroid mean (1=simple mean, 2=weighted mean)
+      call ifile%get_value(    coord,    "coord") ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
+      call ifile%get_value(      cbl,      "cbl") ! The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
+      call ifile%get_value(    itmax,    "itmax") ! Maximum number of iterations for time cycle
+      call ifile%get_value(   itmmax,   "itmmax") ! Maximum number of iterations for mass cycle
+      call ifile%get_value(   itpmax,   "itpmax") ! Maximum number of iteractions for pressure cycle
+      call ifile%get_value(   itemax,   "itemax") ! Maximum number of iteractions for extrapolation to fictitious
+      call ifile%get_value(   nitm_u,   "nitm_u") ! Maximum number of iteractions for solving the linear systems for u, v and T
+      call ifile%get_value(   nitm_p,   "nitm_p") ! Maximum number of iteractions for solving the linear system for p
+      call ifile%get_value(    tol_u,    "tol_u") ! Tolerance in the MSI for solving the linear systems for u, v and T
+      call ifile%get_value(    tol_p,    "tol_p") ! Tolerance in the MSI for solving the linear system for p
+      call ifile%get_value(     tolm,     "tolm") ! Tolerance for the mass cycle
+      call ifile%get_value(     tolt,     "tolt") ! Tolerance for the time evolution cycle
+      call ifile%get_value(      wlf,      "wlf") ! Frequency of printing in the listing file
+      call ifile%get_value(    sem_a,    "sem_a") ! 1 = do not open result files, 0 = open
+      call ifile%get_value(    sem_g,    "sem_g") ! 0 = visualize the plot, 1 = do not visualize
+      call ifile%get_value(      w_g,      "w_g") ! Frequency of writing data for graphics
+      call ifile%get_value(    w_cam,    "w_cam") ! 1 = write the fields, 0 = do not
+      call ifile%get_value(     wppd,     "wppd") ! Write post processed data (0=no, 1=yes, 2=yes-simplified)
+      call ifile%get_value(     beta,     "beta") ! UDS/CDS mixing constant (0=UDS, 1=CDS)
+      call ifile%get_value(      dt1,      "dt1") ! initial time step (s)
+      call ifile%get_value(      dt2,      "dt2") ! final time step (s)
+      call ifile%get_value(      it1,      "it1") ! number of iteractions up to which dt = dt1
+      call ifile%get_value(      it2,      "it2") ! number of iteractions from which dt = dt2
+      call ifile%get_value(       h0,       "h0") ! Amplitude of h in the TSI11 model
+      call ifile%get_value(    mincc,    "mincc") ! Minimum allowed value of the convergence coefficient
+      call ifile%get_value(    maxcc,    "maxcc") ! Maximum allowed value of the convergence coefficient
+      call ifile%get_value(   modvis,   "modvis") ! Viscosity model (0=Euler, 1=NS)
+      call ifile%get_value(      ktm,      "ktm") ! Kind of thermophysical model ( 0 = constant, 1 = T dependent )
+      call ifile%get_value(      kfc,      "kfc") ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
+      call ifile%get_value(     Tsbc,     "Tsbc") ! Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
+      call ifile%get_value(       PF,       "PF") ! Far field pressure (Pa)
+      call ifile%get_value(       TF,       "TF") ! Far field temperature (K)
+      call ifile%get_value(       MF,       "MF") ! Mach number of the free stream
 
       ! After reading the values of nxi and nyi, these variables must be
       ! changed to take into accout the fictitious volumes
