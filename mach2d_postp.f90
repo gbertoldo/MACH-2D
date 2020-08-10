@@ -1,5 +1,7 @@
 module postp
 
+   use mod_class_thermophysical_abstract
+
    character (len = *), parameter :: text_editor     = "emacs -nw "
    character (len = *), parameter :: graph_viewer    = "evince "
    character (len = *), parameter :: graph_generator = "gnuplot "
@@ -226,74 +228,29 @@ contains
 
    !> \brief Writes the gas composition and its properties for a reference
    !! temperature
-   subroutine write_gas_properties(unt, ngs, Ru, Rg, Mg, Tr, Cpr, mur, kpr, Xi &
-      ,                                          Yi, Ri, Mi, cpi, mui, kpi, NGi)
+   subroutine write_gas_properties(unt, Tr, thermomodel)
       implicit none
-      integer, intent(in) :: unt         !< Unit were the results will be printed
-      integer, intent(in) :: ngs         !< Number of gaseous species
-      real(8), intent(in) :: Ru          !< Universal gas constant (J/K.mol)
-      real(8), intent(in) :: Rg          !< Gas constant of the mixture (J/kg.K)
-      real(8), intent(in) :: Mg          !< Molar mass of the mixture (kg/mol)
-      real(8), intent(in) :: Tr          !< Temperature of reference (K)
-      real(8), intent(in) :: Cpr         !< Cp of reference (J/kg.K)
-      real(8), intent(in) :: mur         !< Viscosity of reference (Pa.s)
-      real(8), intent(in) :: kpr         !< Thermal conductivity of reference (W/m.K)
-      real(8), intent(in) :: Xi(ngs)     !< Molar fraction
-      real(8), intent(in) :: Yi(ngs)     !< Massic fraction
-      real(8), intent(in) :: Ri(ngs)     !< Gas constant of the gaseous specie i (J/kg.K)
-      real(8), intent(in) :: Mi(ngs)     !< Molar mass (kg/mol)
-      real(8), intent(in) :: cpi(ngs,10) !< Coefficients for the calculation of cp of specie i
-      real(8), intent(in) :: mui(ngs,8)  !< Coefficients for the calculation of mu of specie i
-      real(8), intent(in) :: kpi(ngs,8)  !< Coefficients for the calculation of kp of specie i
-
-      character(10), intent(in) :: NGi(ngs)  !< Name of the gaseous specie i
-
+      integer,                              intent(in) :: unt         !< Unit were the results will be printed
+      real(8),                              intent(in) :: Tr          !< Temperature of reference (K)
+      class(class_thermophysical_abstract), intent(in) :: thermomodel !< The thermophysical model
 
       ! Inner variables
 
       integer :: i   ! Dummy index
       real(8) :: Prr ! Prandtl number of reference
+      real(8) :: Cpr ! Cp of reference (J/kg.K)
+      real(8) :: mur ! Viscosity of reference (Pa.s)
+      real(8) :: kpr ! Thermal conductivity of reference (W/m.K)
 
+      ! Getting thermophysical properties for the reference temperature
+      mur = thermomodel%mu(Tr)
+      kpr = thermomodel%kp(Tr)
+      Cpr = thermomodel%cp(Tr)
 
       Prr = Cpr * mur / kpr
 
-
-      write(unt,*)
-      write(unt,*) "Gas composition"
-      write(unt,*)
-
-      write(unt,"(A10,5(2X,A14))") "Specie", "Xi", "Yi", "Mi (kg/mol)", "Ri (J/kg.K)"
-
-      do i = 1, ngs
-
-         write(unt,"(A10,5(2X,ES14.7))") trim(NGi(i)), Xi(i), Yi(i), Mi(i), Ri(i)
-
-      end do
-
-      write(unt,*)
-      write(unt,*) "Gas coefficients for Cp, mu and kappa"
-      write(unt,*)
-
-      do i = 1, ngs
-
-         write(unt,*) trim(NGi(i))
-         write(unt,"(A20,10(2X,ES14.7))") "Cp ( 200K<=T<=1000K): ", cpi(i,1:5)
-         write(unt,"(A20,10(2X,ES14.7))") "Cp (1000K<=T<=6000K): ", cpi(i,6:10)
-         write(unt,"(A20,10(2X,ES14.7))") "mu ( 300K<=T<=1000K): ", mui(i,1:4)
-         write(unt,"(A20,10(2X,ES14.7))") "mu (1000K<=T<=5000K): ", mui(i,5:8)
-         write(unt,"(A20,10(2X,ES14.7))") "kp ( 300K<=T<=1000K): ", kpi(i,1:4)
-         write(unt,"(A20,10(2X,ES14.7))") "kp (1000K<=T<=5000K): ", kpi(i,5:8)
-         write(unt,*)
-
-      end do
-
-      write(unt,*)
-      write(unt,*) "Gas properties"
-      write(unt,*)
-      write(unt,"(ES23.16,2X,A)") Ru, " = Ru: universal gas constant (J/K.mol)"
-      write(unt,"(ES23.16,2X,A)") Rg, " = Rg: gas constant (J/K.kg)"
-      write(unt,"(ES23.16,2X,A)") Mg, " = Mg: molar mass (kg/mol)"
-      write(unt,*)
+      ! Printing information about thermophysical model
+      call thermomodel%about(unt)
 
       write(unt,*)
       write(unt,*) "Gas properties for a temperature of reference"

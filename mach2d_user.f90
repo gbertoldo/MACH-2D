@@ -15711,22 +15711,12 @@ contains
 
 
    !> \brief Calculates some of the free stream properties of the gas
-   subroutine get_free_stream_properties(ngs, Xi, Yi, Ri, Mi, mui, kpi, cpi &
-      ,  PF, TF, Rg, MF, CPF, GF, VLF, KPF, PRF, ROF, UF, REFm, HF) ! Output: last 9
+   subroutine get_free_stream_properties(thermomodel, PF, TF, MF, CPF, GF, VLF, KPF, PRF, ROF, UF, REFm, HF) ! Output: last 9
       implicit none
-      integer, intent(in) :: ngs         !< Number of gaseous species
-      real(8), intent(in) :: Xi(ngs)     !< Molar fraction
-      real(8), intent(in) :: Yi(ngs)     !< Massic fraction
-      real(8), intent(in) :: Ri(ngs)     !< Gas constant of the gaseous specie i (J/kg.K)
-      real(8), intent(in) :: Mi(ngs)     !< Molar mass (kg/mol)
-      real(8), intent(in) :: mui(ngs,8)  !< Coefficients for the calculation of mu of specie i
-      real(8), intent(in) :: kpi(ngs,8)  !< Coefficients for the calculation of kp of specie i
-      real(8), intent(in) :: cpi(ngs,10) !< Coefficients for the calculation of cp of specie i
-      real(8), intent(in) :: PF          !< Free stream pressure (Pa)
-      real(8), intent(in) :: TF          !< Free stream temperature (K)
-      real(8), intent(in) :: Rg          !< Gas constant (J/kg.K)
-      real(8), intent(in) :: MF          !< Free stream Mach number
-
+      class(class_thermophysical_abstract), pointer, intent(in) :: thermomodel !< A pointer to the thermophysical model
+      real(8), intent(in)  ::   PF !< Free stream pressure (Pa)
+      real(8), intent(in)  ::   TF !< Free stream temperature (K)
+      real(8), intent(in)  ::   MF !< Free stream Mach number
       real(8), intent(out) ::  CPF !< Free stream Cp (J/kg.K)
       real(8), intent(out) ::   GF !< Free stream gamma
       real(8), intent(out) ::  VLF !< Free stream viscosity (Pa.s)
@@ -15737,27 +15727,26 @@ contains
       real(8), intent(out) :: REFm !< Free stream Reynolds number per meter (1/m)
       real(8), intent(out) ::   HF !< Free stream total enthalpy (m2/s2)
 
-
       ! Free stream Cp
-      CPF = cp_mix(ngs, TF, Yi, Ri, cpi)
+      CPF = thermomodel%cp(TF)
 
       ! Free stream gamma
-      GF = CPF / ( CPF - Rg )
+      GF = CPF / ( CPF - thermomodel%Rg )
 
       ! Free stream viscosity (Pa.s)
-      VLF = mu_mix(ngs, TF, Xi, Mi, mui)
+      VLF = thermomodel%mu(TF)
 
       ! Free stream thermal conductivity (W/m.K)
-      KPF = kp_mix(ngs, TF, Xi, Mi, kpi)
+      KPF = thermomodel%kp(TF)
 
       ! Free stream Prandtl number
       PRF = CPF * VLF / KPF
 
       ! Free stream density (kg/m3)
-      ROF = PF / ( Rg * TF )
+      ROF = PF / ( thermomodel%Rg * TF )
 
       ! Free stream speed (m/s)
-      UF = sqrt( GF * Rg * TF ) * MF
+      UF = sqrt( GF * thermomodel%Rg * TF ) * MF
 
       ! Free stream Reynolds number per meter
       REFm = UF * ROF / VLF
@@ -15788,25 +15777,16 @@ contains
 
    !> \brief Initializes the vectors with specific heat Cp,
    !! viscosity mu and thermal conductivity kappa.
-   subroutine get_cp_mu_kappa_initialization(nx, ny, ngs, ktm, modvis, CPF  &
-      ,  VLF, KPF, Xi, Yi, Ri, Mi, cpi, mui, kpi, Tbn, Tbs, Tbe, Tbw, T, cp &
-      ,  vlp, vle, vln, kp, ke, kn) ! Output: last seven
+   subroutine get_cp_mu_kappa_initialization(nx, ny, ktm, modvis, CPF, VLF, KPF &
+         ,                 Tbn, Tbs, Tbe, Tbw, T, cp, vlp, vle, vln, kp, ke, kn ) ! Output: last seven
       implicit none
       integer, intent(in) ::          nx !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) ::          ny !< Number of volumes in eta direction (real+fictitious)
-      integer, intent(in) ::         ngs !< Number of gaseous species
       integer, intent(in) ::         ktm !< Kind of thermophysical model ( 0 = constant, 1 = T dependent )
       integer, intent(in) ::      modvis !< Viscosity model (0=Euler, 1=NS)
       real(8), intent(in) ::         CPF !< Free stream Cp (J/kg.K)
       real(8), intent(in) ::         VLF !< Free stream viscosity (Pa.s)
       real(8), intent(in) ::         KPF !< Free stream thermal conductivity (W/m.K)
-      real(8), intent(in) ::     Xi(ngs) !< Molar fraction
-      real(8), intent(in) ::     Yi(ngs) !< Massic fraction
-      real(8), intent(in) ::     Ri(ngs) !< Gas constant of the gaseous specie i (J/kg.K)
-      real(8), intent(in) ::     Mi(ngs) !< Molar mass (kg/mol)
-      real(8), intent(in) :: cpi(ngs,10) !< Coefficients for the calculation of cp of specie i
-      real(8), intent(in) ::  mui(ngs,8) !< Coefficients for the calculation of mu of specie i
-      real(8), intent(in) ::  kpi(ngs,8) !< Coefficients for the calculation of kp of specie i
       real(8), dimension(nx),    intent(in)  :: Tbn !< Temperature over the north boundary (K)
       real(8), dimension(nx),    intent(in)  :: Tbs !< Temperature over the south boundary (K)
       real(8), dimension(ny),    intent(in)  :: Tbe !< Temperature over the  east boundary (K)
@@ -15846,7 +15826,7 @@ contains
       else ! Temperature dependent thermophysical properties
 
          ! Calculates cp at the center of each real volume
-         call set_cp(nx, ny, ngs, Yi, Ri, cpi, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+         call set_cp(nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
 
 
          ! Thermophysical properties for the Navier-Stokes equations only
@@ -15854,23 +15834,21 @@ contains
          if ( modvis == 1 ) then
 
             ! Calculates the laminar viscosity at the nodes of real volumes
-            call set_laminar_viscosity_at_nodes(nx, ny, ngs, Xi, Mi, mui, T, vlp)
+            call set_laminar_viscosity_at_nodes(nx, ny, T, vlp)
             ! Output: last one
 
 
             ! Calculates the thermal conductivity at the nodes of real volumes
-            call set_thermal_conductivity_at_nodes(nx, ny, ngs, Xi, Mi, kpi, T, kp)
+            call set_thermal_conductivity_at_nodes(nx, ny, T, kp)
             ! Output: last one
 
 
             ! Calculates the laminar viscosity at faces
-            call get_laminar_viscosity_at_faces(nx, ny, ngs, Xi, Mi, mui, Tbn &
-               ,               Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+            call get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
 
 
             ! Calculates the thermal conductivity at faces
-            call get_thermal_conductivity_at_faces(nx, ny, ngs, Xi, Mi, kpi, Tbn &
-               ,                     Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+            call get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
 
          end if
 

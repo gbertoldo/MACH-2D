@@ -44,8 +44,29 @@ All data must follow the input pattern: "value & variable & description", where 
             0.010000000000000E+00 & h0     & Amplitude of h in the TSI11 model
             0.600000000000000E+00 & mincc  & Minimum allowed value of the convergence coefficient
             0.900000000000000E+00 & maxcc  & Maximum allowed value of the convergence coefficient
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+THERMOPHYSICAL MODEL
+====================
+                            CONSTANT & thermo_model          & Thermophysical model (MIXTURE, CONSTANT)
+
+Parameters of the "MIXTURE" thermophysical model:
+-------------------------------------------------
+./mach2d_input/thermo_parameters.txt & thermo_mix_parameters & Parameters for the "MIXTURE" thermophysical model
+  ./mach2d_input/thermo_database.csv & thermo_mix_database   & Database   for the "MIXTURE" thermophysical model
+
+Parameters of the "CONSTANT" thermophysical model:
+--------------------------------------------------
+              2.8700669426732628E+02 & thermo_const_Rg       & Gas constant for the "CONSTANT" thermophysical model
+              2.8969742400000002E-02 & thermo_const_Mg       & Molar mass   for the "CONSTANT" thermophysical model
+              1.4000666049749086E+00 & thermo_const_gamma    & Spec. heat   for the "CONSTANT" thermophysical model
+              1.8559826909460396E-05 & thermo_const_mu       & Viscosity    for the "CONSTANT" thermophysical model
+              2.5730324444045719E-02 & thermo_const_kappa    & T. conduct.  for the "CONSTANT" thermophysical model
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
                                 1 & modvis & Viscosity model (0=Euler, 1=NS)
-                                0 & ktm    & Kind of thermophysical model ( 0 = constant, 1 = T dependent )
                                 0 & kfc    & Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
            -6.167000000000000E+02 & Tsbc   & Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
             4.918447705636290E+04 & PF     & Far field pressure (Pa)

@@ -1,6 +1,7 @@
 module data
 
    use mod_class_ifile
+   use mod_class_thermophysical_abstract
 
    implicit none
 
@@ -178,7 +179,10 @@ module data
    !
    ! GAS PROPERTIES AND VARIABLES
    !
-   integer :: ktm    ! Kind of thermophysical model ( 0 = constant, 1 = T dependent )
+   class(class_thermophysical_abstract), pointer :: thermomodel !< A pointer to the thermophysical model
+   integer :: ktm  !< Kind of thermophysical model ( THERMOPHYSICAL_CONSTANT, THERMOPHYSICAL_VARIABLE )
+   real(8) :: Rg   !< Gas constant (J/kg.K)
+
    integer :: modvis ! Viscosity model (0=Euler, 1=NS)
 
    real(8) ::  CPF !< Free stream Cp (J/kg.K)
@@ -325,7 +329,6 @@ contains
       call ifile%get_value(    mincc,    "mincc") ! Minimum allowed value of the convergence coefficient
       call ifile%get_value(    maxcc,    "maxcc") ! Maximum allowed value of the convergence coefficient
       call ifile%get_value(   modvis,   "modvis") ! Viscosity model (0=Euler, 1=NS)
-      call ifile%get_value(      ktm,      "ktm") ! Kind of thermophysical model ( 0 = constant, 1 = T dependent )
       call ifile%get_value(      kfc,      "kfc") ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
       call ifile%get_value(     Tsbc,     "Tsbc") ! Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
       call ifile%get_value(       PF,       "PF") ! Far field pressure (Pa)
@@ -414,7 +417,6 @@ contains
       write(fid,"(ES23.16,' ....: ',A)") mincc , " mincc  - Minimum allowed value of the convergence coefficient"
       write(fid,"(ES23.16,' ....: ',A)") maxcc , " maxcc  - Maximum allowed value of the convergence coefficient"
       write(fid,"(I23,' ....: ',A)")    modvis , " modvis - Viscosity model (0=Euler, 1=NS)"
-      write(fid,"(I23,' ....: ',A)")    ktm    , " ktm    - Kind of thermophysical model ( 0 = constant, 1 = T dependent )"
       write(fid,"(I23,' ....: ',A)")    kfc    , " kfc    - Kind of foredrag calculation " &
          // "( 0 = over the whole forebody; 1 = over the ogive only)"
       write(fid,"(ES23.16,' ....: ',A)") Tsbc  , " Tsbc   - Temperature on the"&

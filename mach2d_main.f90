@@ -16,13 +16,11 @@ program main
 
 
    ! Initializes variables related to the thermophysical properties of the gas
-   call thermophysical_initialization!(ngs, base, Ru, Rg, Mg, Xi, Yi, Mi, Ri &
-      !, cpi, mui, kpi, NGi) ! Output: all
+   call thermophysical_initialization(ifile, thermomodel, Rg, ktm) ! Output: last three
 
 
    ! Calculates some of the free stream properties of the gas
-   call get_free_stream_properties(ngs, Xi, Yi, Ri, Mi, mui, kpi, cpi &
-      ,  PF, TF, Rg, MF, CPF, GF, VLF, KPF, PRF, ROF, UF, REFm, HF) ! Output: last 9
+   call get_free_stream_properties(thermomodel, PF, TF, MF, CPF, GF, VLF, KPF, PRF, ROF, UF, REFm, HF) ! Output: last 9
 
 
    ! Getting the finest grid
@@ -80,9 +78,8 @@ program main
 
    ! Initializes the vectors with specific heat Cp, viscosity mu and thermal
    ! conductivity kappa.
-   call get_cp_mu_kappa_initialization(nx, ny, ngs, ktm, modvis, CPF  &
-      ,  VLF, KPF, Xi, Yi, Ri, Mi, cpi, mui, kpi, Tbn, Tbs, Tbe, Tbw, T, cp &
-      ,  vlp, vle, vln, kp, ke, kn) ! Output: last seven
+   call get_cp_mu_kappa_initialization(nx, ny, ktm, modvis, CPF, VLF, KPF &
+      ,              Tbn, Tbs, Tbe, Tbw, T, cp, vlp, vle, vln, kp, ke, kn ) ! Output: last seven
 
 
    ! Time step initialization
@@ -147,7 +144,7 @@ program main
 
       ! Calculations of the thermophysical properties
 
-      if ( ktm == 1 ) then ! Temperature dependent thermophysical properties
+      if ( ktm == THERMOPHYSICAL_VARIABLE ) then ! Temperature dependent thermophysical properties
 
 
          ! Calculates the temperature over the boundaries
@@ -158,7 +155,7 @@ program main
 
 
          ! Calculates cp at the center of each real volume and over the boundaries
-         call set_cp(nx, ny, ngs, Yi, Ri, cpi, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+         call set_cp(nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
 
 
          ! Thermophysical properties for the Navier-Stokes equations only
@@ -166,23 +163,19 @@ program main
          if ( modvis == 1 ) then
 
             ! Calculates the laminar viscosity at the nodes of real volumes
-            call set_laminar_viscosity_at_nodes(nx, ny, ngs, Xi, Mi, mui, T &
-               ,                                         vlp) ! Output: last one
+            call set_laminar_viscosity_at_nodes(nx, ny, T, vlp) ! Output: last one
 
 
             ! Calculates the thermal conductivity at the nodes of real volumes
-            call set_thermal_conductivity_at_nodes(nx, ny, ngs, Xi, Mi, kpi, T &
-               ,                                          kp) ! Output: last one
+            call set_thermal_conductivity_at_nodes(nx, ny, T, kp) ! Output: last one
 
 
             ! Calculates the laminar viscosity at faces
-            call get_laminar_viscosity_at_faces(nx, ny, ngs, Xi, Mi, mui, Tbn &
-               ,                Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+            call get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
 
 
             ! Calculates the thermal conductivity at faces
-            call get_thermal_conductivity_at_faces(nx, ny, ngs, Xi, Mi, kpi &
-               ,              Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+            call get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
 
          end if
 
@@ -460,7 +453,7 @@ program main
       ! Selecting between Euler and Navier-Stokes equations
 
 
-      if ( modvis == 0 .and. ktm == 0 ) then ! Euler with constant thermophysical properties
+      if ( modvis == 0 .and. ktm == THERMOPHYSICAL_CONSTANT ) then ! Euler with constant thermophysical properties
 
 
          ! Calculates the temperature based on the conservation of the total enthalpy
@@ -712,8 +705,7 @@ contains
       real(8), dimension (nx*ny) :: M    ! Mach number at the center of the volumes
 
       ! Writes the gas composition and its properties for a reference temperature
-      call write_gas_properties(lid, ngs, Ru, Rg, Mg, TF, CPF, VLF, KPF, Xi &
-         ,                                    Yi, Ri, Mi, cpi, mui, kpi, NGi)
+      call write_gas_properties(lid, TF, thermomodel)
 
       ! Writes some of the free stream properties of the gas
       call write_free_stream_properties(lid, lr, rb, PF, TF, MF, CPF, GF &
@@ -914,8 +906,8 @@ contains
       implicit none
 
       ! Writes the gas composition and its properties for a reference temperature
-      call write_gas_properties(lid, ngs, Ru, Rg, Mg, TF, CPF, VLF, KPF, Xi &
-         ,                                    Yi, Ri, Mi, cpi, mui, kpi, NGi)
+      call write_gas_properties(lid, TF, thermomodel)
+
 
       ! Writes some of the free stream properties of the gas
       call write_free_stream_properties(lid, lr, rb, PF, TF, MF, CPF, GF &
