@@ -78,12 +78,8 @@ module data
    integer :: w_g    ! Frequency of writing data for graphics
    integer :: w_cam  ! 1 = write the fields, 0 = do not
    integer :: wppd   ! Write post processed data (0=no, 1=yes, 2=yes-simplified)
-   integer :: it1    ! number of iteractions up to which dt = dt1
-   integer :: it2    ! number of iteractions from which dt = dt2
    real(8) :: beta   ! UDS/CDS mixing constant (0=UDS, 1=CDS)
    real(8) :: dt     ! Time step (s)
-   real(8) :: dt1    ! Initial time step (s)
-   real(8) :: dt2    ! Final time step (s)
    real(8) :: norm   ! Norm of the residuals of all linear systems
    real(8) :: normpl ! Relative norm for pressure deviation: max |pl| / p_avg
    real(8) :: tcpu1  ! First time measurement
@@ -93,23 +89,10 @@ module data
    real(8) :: tolm   ! Tolerance for the mass cycle
    real(8) :: tol_u  !< Tolerance in the MSI for solving the linear systems for u, v and T
    real(8) :: tol_p  !< Tolerance in the MSI for solving the linear system for p
-   real(8) :: curef  !< Reference value of the coefficient of convergence for u
-   real(8) :: cvref  !< Reference value of the coefficient of convergence for v
-   real(8) :: ctref  !< Reference value of the coefficient of convergence for T
-   real(8) :: cpref  !< Reference value of the coefficient of convergence for p
-   real(8) :: cref   !< Reference value of the coef. of convergence for u, v, T, p
-   real(8) :: h0     !< Amplitude of h in the TSI11 model
-   real(8) :: maxcc  !< Maximum allowed value of the convergence coefficient
-   real(8) :: mincc  !< Minimum allowed value of the convergence coefficient
    real(8) :: rmass  !< Norm L1 of the residual of the mass conservation equation
 
    real(8) :: RAM    ! RAM memory (MB)
 
-
-   !real(8), allocatable, dimension(:) :: ccu ! Convergence vector for u
-   !real(8), allocatable, dimension(:) :: ccv ! Convergence vector for v
-   !real(8), allocatable, dimension(:) :: cct ! Convergence vector for t
-   !real(8), allocatable, dimension(:) :: ccp ! Convergence vector for p
    real(8), allocatable, dimension(:) :: bu   ! Source of the linear system for u
    real(8), allocatable, dimension(:) :: bv   ! Source of the linear system for v
    real(8), allocatable, dimension(:) :: bt   ! Source of the linear system for T
@@ -321,13 +304,6 @@ contains
       call ifile%get_value(    w_cam,    "w_cam") ! 1 = write the fields, 0 = do not
       call ifile%get_value(     wppd,     "wppd") ! Write post processed data (0=no, 1=yes, 2=yes-simplified)
       call ifile%get_value(     beta,     "beta") ! UDS/CDS mixing constant (0=UDS, 1=CDS)
-      call ifile%get_value(      dt1,      "dt1") ! initial time step (s)
-      call ifile%get_value(      dt2,      "dt2") ! final time step (s)
-      call ifile%get_value(      it1,      "it1") ! number of iteractions up to which dt = dt1
-      call ifile%get_value(      it2,      "it2") ! number of iteractions from which dt = dt2
-      call ifile%get_value(       h0,       "h0") ! Amplitude of h in the TSI11 model
-      call ifile%get_value(    mincc,    "mincc") ! Minimum allowed value of the convergence coefficient
-      call ifile%get_value(    maxcc,    "maxcc") ! Maximum allowed value of the convergence coefficient
       call ifile%get_value(   modvis,   "modvis") ! Viscosity model (0=Euler, 1=NS)
       call ifile%get_value(      kfc,      "kfc") ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
       call ifile%get_value(     Tsbc,     "Tsbc") ! Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
@@ -409,13 +385,6 @@ contains
       write(fid,"(I23,' ....: ',A)")    w_cam  , " w_cam  - 1 = write the fields, 0 = do not"
       write(fid,"(I23,' ....: ',A)")    wppd   , " wppd   - Write post processed data (0=no, 1=yes, 2=yes-simplified)"
       write(fid,"(ES23.16,' ....: ',A)") beta  , " beta   - UDS/CDS mixing constant (0=UDS, 1=CDS)"
-      write(fid,"(ES23.16,' ....: ',A)") dt1   , " dt1    - initial time step (s)"
-      write(fid,"(ES23.16,' ....: ',A)") dt2   , " dt2    - final time step (s)"
-      write(fid,"(I23,' ....: ',A)")    it1    , " it1    - number of iteractions up to which dt = dt1"
-      write(fid,"(I23,' ....: ',A)")    it2    , " it2    - number of iteractions from which dt = dt2"
-      write(fid,"(ES23.16,' ....: ',A)") h0    , " h0     - Amplitude of h in the TSI11 model"
-      write(fid,"(ES23.16,' ....: ',A)") mincc , " mincc  - Minimum allowed value of the convergence coefficient"
-      write(fid,"(ES23.16,' ....: ',A)") maxcc , " maxcc  - Maximum allowed value of the convergence coefficient"
       write(fid,"(I23,' ....: ',A)")    modvis , " modvis - Viscosity model (0=Euler, 1=NS)"
       write(fid,"(I23,' ....: ',A)")    kfc    , " kfc    - Kind of foredrag calculation " &
          // "( 0 = over the whole forebody; 1 = over the ogive only)"

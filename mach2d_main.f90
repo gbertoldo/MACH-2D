@@ -7,6 +7,7 @@ program main
    use coefficients
    use solvers
    use postp
+   use mod_tstepper
 
    implicit none
 
@@ -83,19 +84,10 @@ program main
 
 
    ! Time step initialization
+   call tstepper_init(ifile)
 
-   if ( 0.d0 < mincc .and. mincc < maxcc ) then ! ( dynamic dt )
-
-      ! Calculates the first time step dt based on the initial conditions for u and v
-      ! as well as on the grid
-      call get_first_time_step(nx, ny, Jp, u, v, dt) ! Output: last one
-
-   else
-
-      dt = dt1
-
-   end if
-
+   ! Calculates the first time step
+   dt = tstepper_dt0(0, nx, ny, Jp, u, v)
 
    ! Selects the portion of the forebody where the drag will be calculated
    select case ( kfc )
@@ -516,28 +508,8 @@ program main
       call get_p_extrapolation_to_fictitious(nx, ny, p) ! InOutput: last one
 
 
-      ! Calculation of the convergence coefficients
-
-      curef = get_mean_cc_9d(nx, ny, au)
-      cvref = get_mean_cc_9d(nx, ny, av)
-      ctref = get_mean_cc_9d(nx, ny, at)
-      cpref = get_mean_cc_5d(nx, ny, ap)
-
-      cref = max(curef, cvref, ctref, cpref )
-
-      ! Selecting time step
-
-      if ( 0.d0 < mincc .and. mincc < maxcc ) then ! Dynamic dt
-
-         call get_time_step_increment(cref, h0, mincc, maxcc, dt)
-
-      else ! Pre-defined increasing
-
-         if ( it+1 <= It1 ) dt = dt1
-         if ( it+1 >  It1 .and. it+1 < It2 ) dt = dt1 + (dt2-dt1)*(it+1-It1)/(It2-It1)
-         if ( it+1 >= It2 ) dt = dt2
-
-      end if
+      ! Selecting the next time step
+      dt = tstepper_dt(it, nx, ny, dt, au, av, at, ap)
 
 
       if ( it == 1 ) then
@@ -556,15 +528,15 @@ program main
          end if
 
          write(  *,"(A10, 12(1X, A15))") 'it', 'norm', 'max(|pl|)/p_avg'  &
-            , 'Cdfi', 'Cdfv', 'dt', 'curef', 'cvref', 'ctref', 'cpref', 'cref' &
+            , 'Cdfi', 'Cdfv', 'dt' &
             , 'rmass'
 
          write(rid,"(A10, 12(1X, A23))") 'it', 'norm', 'max(|pl|)/p_avg'  &
-            , 'Cdfi', 'Cdfv', 'dt', 'curef', 'cvref', 'ctref', 'cpref', 'cref' &
+            , 'Cdfi', 'Cdfv', 'dt' &
             , 'rmass'
 
          write(rid,"(I10, 12(1X,ES23.16))") it, norm, normpl    &
-            , Cdfi, Cdfv, dt, curef, cvref, ctref, cpref, cref, rmass
+            , Cdfi, Cdfv, dt, rmass
 
       end if
 
@@ -603,10 +575,10 @@ program main
          end if
 
          write(  *,"(I10, 12(1X,ES15.8))") it, norm, normpl     &
-            , Cdfi, Cdfv, dt, curef, cvref, ctref, cpref, cref, rmass
+            , Cdfi, Cdfv, dt, rmass
 
          write(rid,"(I10, 12(1X,ES23.16))") it, norm, normpl    &
-            , Cdfi, Cdfv, dt, curef, cvref, ctref, cpref, cref, rmass
+            , Cdfi, Cdfv, dt, rmass
 
       end if
 
@@ -853,32 +825,11 @@ contains
          29     format(//,30x,'dn: coefficient d of SIMPLEC at north face (m3.s/kg)')
          call write_field(nx, ny, lid, xp, yp, dn)
 
-         !write(lid,30)
-         !30     format(//,30x,'ccu: coefficient of convergence of u')
-         !call write_field(nx, ny, lid, xp, yp, ccu)
-
-         !write(lid,31)
-         !31     format(//,30x,'ccv: coefficient of convergence of v')
-         !call write_field(nx, ny, lid, xp, yp, ccv)
-
-         !write(lid,32)
-         !32     format(//,30x,'cct: coefficient of convergence of T')
-         !call write_field(nx, ny, lid, xp, yp, cct)
-
-         !write(lid,33)
-         !33     format(//,30x,'ccp: coefficient of convergence of p')
-         !call write_field(nx, ny, lid, xp, yp, ccp)
-
       end if
-
-      !> \brief Writes main parameters of the convergence coefficients of the
-      !! linear systems for u, v, T and p'
-      !call write_cc_parameters(lid,nx, ny, ccu, ccv, cct, ccp)
 
 
       ! Print main results
-      call write_main_results(lid, it, norm, dt, tcpu, RAM, curef &
-      , cvref, ctref, cpref, Cdfi, Cdfv)
+      call write_main_results(lid, it, norm, dt, tcpu, RAM, Cdfi, Cdfv)
 
 
       ! Plots the residual as a function of the iteractions
@@ -922,8 +873,7 @@ contains
 
 
       ! Print main results
-      call write_main_results(lid, it, norm, dt, tcpu, RAM, curef &
-      , cvref, ctref, cpref, Cdfi, Cdfv)
+      call write_main_results(lid, it, norm, dt, tcpu, RAM, Cdfi, Cdfv)
 
       ! close the main listing file
       close (lid)

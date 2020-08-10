@@ -236,7 +236,6 @@ contains
 
       ! Inner variables
 
-      integer :: i   ! Dummy index
       real(8) :: Prr ! Prandtl number of reference
       real(8) :: Cpr ! Cp of reference (J/kg.K)
       real(8) :: mur ! Viscosity of reference (Pa.s)
@@ -328,101 +327,6 @@ contains
       write(unt,"(ES23.16,A)") KNFr, " = KNFr: Knudsen number based on REFr"
 
    end subroutine write_free_stream_properties
-
-
-   !> \brief Writes main parameters of the convergence coefficients of the
-   !! linear systems for u, v, T and p'
-   subroutine write_cc_parameters(unit,nx, ny, ccu, ccv, cct, ccp)
-      implicit none
-      integer, intent(in) :: unit ! Unit to which the results will be printed
-      integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-      integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-      real(8), dimension (nx*ny), intent(in) :: ccu ! Convergence coef. for u
-      real(8), dimension (nx*ny), intent(in) :: ccv ! Convergence coef. for v
-      real(8), dimension (nx*ny), intent(in) :: cct ! Convergence coef. for T
-      real(8), dimension (nx*ny), intent(in) :: ccp ! Convergence coef. for p
-
-      ! Inner variables
-
-      integer :: i, j, np
-
-      write(unit,*)
-      write(unit,*) "*** Convergence coefficients that exceed 1 ***"
-
-      write(unit,*)
-      write(unit,*) "*** ccu ***"
-      write(unit,*)
-      write(unit,'(A4,A4,(A15))') 'i', 'j', 'ccu'
-      do i = 2, nx-1
-
-         do j = 2, ny-1
-
-            np   = nx * (j-1) + i
-
-            if ( ccu(np) > 1.d0 ) then
-               write(unit,'(I4,I4,(ES15.7))') i, j, ccu(np)
-            end if
-
-         end do
-
-      end do
-
-
-      write(unit,*)
-      write(unit,*) "*** ccv ***"
-      write(unit,*)
-      write(unit,'(A4,A4,(A15))') 'i', 'j', 'ccv'
-      do i = 2, nx-1
-
-         do j = 2, ny-1
-
-            np   = nx * (j-1) + i
-
-            if ( ccv(np) > 1.d0 ) then
-               write(unit,'(I4,I4,(ES15.7))') i, j, ccv(np)
-            end if
-
-         end do
-
-      end do
-
-      write(unit,*)
-      write(unit,*) "*** ccT ***"
-      write(unit,*)
-      write(unit,'(A4,A4,(A15))') 'i', 'j', 'ccT'
-      do i = 2, nx-1
-
-         do j = 2, ny-1
-
-            np   = nx * (j-1) + i
-
-            if ( ccT(np) > 1.d0 ) then
-               write(unit,'(I4,I4,(ES15.7))') i, j, ccT(np)
-            end if
-
-         end do
-
-      end do
-
-      write(unit,*)
-      write(unit,*) "*** ccp ***"
-      write(unit,*)
-      write(unit,'(A4,A4,(A15))') 'i', 'j', 'ccp'
-      do i = 2, nx-1
-
-         do j = 2, ny-1
-
-            np   = nx * (j-1) + i
-
-            if ( ccp(np) > 1.d0 ) then
-               write(unit,'(I4,I4,(ES15.7))') i, j, ccp(np)
-            end if
-
-         end do
-
-      end do
-
-   end subroutine
 
 
    subroutine write_body_parameters( unit, lr, rb) ! Output: last entry
@@ -678,8 +582,7 @@ contains
 
 
    ! Print main data to a file
-   subroutine write_main_results(unit, it, norm, dt, tcpu, RAM, curef &
-      , cvref, ctref, cpref, Cdfi, Cdfv)
+   subroutine write_main_results(unit, it, norm, dt, tcpu, RAM, Cdfi, Cdfv)
       implicit none
       integer, intent(in) :: unit  ! Unit to which the results will be printed
       integer, intent(in) :: it     ! final number of iteractions for time evolution
@@ -687,10 +590,6 @@ contains
       real(8), intent(in) :: dt     ! dt of the last iteraction (s)"
       real(8), intent(in) :: tcpu   ! Total time (before and after simulation interruption)
       real(8), intent(in) :: RAM    ! RAM memory (MB)
-      real(8), intent(in) :: curef  ! Reference value of the coefficient of convergence for u
-      real(8), intent(in) :: cvref  ! Reference value of the coefficient of convergence for v
-      real(8), intent(in) :: ctref  ! Reference value of the coefficient of convergence for T
-      real(8), intent(in) :: cpref  ! Reference value of the coefficient of convergence for p
       real(8), intent(in) :: Cdfi   ! Pressure foredrag coefficient
       real(8), intent(in) :: Cdfv   ! Viscous foredrag coefficient
 
@@ -704,10 +603,6 @@ contains
       write(unit,"(ES23.15,A)")       dt, " =    dt: dt of the last iteraction (s)"
       write(unit,"(I23,A)")         it-1, " =    it: final number of iteractions for time evolution"
       write(unit,"(ES23.15,A)")     tcpu, " =  tcpu: cpu time (s)"
-      write(unit,"(ES23.15,A)")    curef, " = curef: Reference value of the coefficient of convergence for u"
-      write(unit,"(ES23.15,A)")    cvref, " = cvref: Reference value of the coefficient of convergence for v"
-      write(unit,"(ES23.15,A)")    ctref, " = ctref: Reference value of the coefficient of convergence for T"
-      write(unit,"(ES23.15,A)")    cpref, " = cpref: Reference value of the coefficient of convergence for p"
       write(unit,"(ES23.15,A)")     Cdfi, " =  Cdfi: Pressure foredrag coefficient"
       write(unit,"(ES23.15,A)")     Cdfv, " =  Cdfv: Viscous foredrag coefficient"
       write(unit,"(ES23.15,A)") Cdfi+Cdfv, " =   Cdf: Foredrag coefficient"

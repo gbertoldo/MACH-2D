@@ -37,13 +37,19 @@ All data must follow the input pattern: "value & variable & description", where 
                                 0 & w_cam  & 1 = write the fields, 0 = do not
                                 1 & wppd   & Write post processed data (0=no, 1=yes, 2=yes-simplified)
             0.000000000000000E+00 & beta   & UDS/CDS mixing constant (0=UDS, 1=CDS)
-            1.000000000000000E-08 & dt1    & initial time step (s)
-            2.000000000000000E-05 & dt2    & final time step (s)
-                              100 & it1    & number of iteractions up to which dt = dt1
-                              600 & it2    & number of iteractions from which dt = dt2
-            0.010000000000000E+00 & h0     & Amplitude of h in the TSI11 model
-            0.600000000000000E+00 & mincc  & Minimum allowed value of the convergence coefficient
-            0.900000000000000E+00 & maxcc  & Maximum allowed value of the convergence coefficient
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+TIME-STEP MODEL
+===============
+                             RAMP & dtmodel & Model of the "time stepper": RAMP, SCARBOROUGH
+            1.000000000000000E-08 & dt1     & initial time step (s) for RAMP model
+            2.000000000000000E-05 & dt2     & final time step (s) for RAMP model
+                              100 & it1     & number of iteractions up to which dt = dt1 for RAMP model
+                              600 & it2     & number of iteractions from which dt = dt2 for RAMP model
+            0.010000000000000E+00 & h0      & Amplitude of h in the TSI11 SCARBOROUGH model
+            0.600000000000000E+00 & mincc   & Minimum allowed value of the convergence coefficient for SCARBOROUGH model
+            0.900000000000000E+00 & maxcc   & Maximum allowed value of the convergence coefficient for SCARBOROUGH model
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 
