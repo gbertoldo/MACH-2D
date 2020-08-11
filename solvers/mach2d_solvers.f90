@@ -1,6 +1,6 @@
 !>
-!! \brief "solvers" module provides 5 and 9 diagonal linear systems. It also
-!!        provides procedures for calculation of norms.
+!! \brief "solvers" module provides 5 and 9 diagonal linear systems' solvers. It
+!!        also provides procedures for calculation of norms.
 !!
 module solvers
 
