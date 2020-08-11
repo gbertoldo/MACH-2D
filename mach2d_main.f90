@@ -89,6 +89,9 @@ program main
    ! Calculates the first time step
    dt = tstepper_dt0(0, nx, ny, Jp, u, v)
 
+   ! Initialize solvers
+   call solvers_init(nx, ny, ifile, solver5d, solver9d)
+
    ! Selects the portion of the forebody where the drag will be calculated
    select case ( kfc )
 
@@ -265,31 +268,14 @@ program main
             , dvn, de, dn) ! InOutput: last 6
 
 
-
          ! Solves the linear system for u
-
-         ! LU decomposition
-         call lu2d9(au,dl9,du9,nxy,nx,ny)
-
-         ! Linear system solution
-         call fb2d9(au,dl9,du9,ny,nx,nxy,u,tol_u,nitm_u,bu)
-
-
-         !call tdma2d9(nx, ny, nitm_u, au, bu, u)
+         call solver9d%solve(au, bu, u)
 
          ! Calculates the norm of the residual of the linear system for u
          call norm_l1_9d_relative( nx, ny, u, bu, au, norm) ! InOutput: last one
 
-
          ! Solves the linear system for v
-
-         ! LU decomposition
-         call lu2d9(av,dl9,du9,nxy,nx,ny)
-
-         ! Linear system solution
-         call fb2d9(av,dl9,du9,ny,nx,nxy,v,tol_u,nitm_u,bv)
-
-         !call tdma2d9(nx, ny, nitm_u, av, bv, v)
+         call solver9d%solve(av, bv, v)
 
          ! Calculates the norm of the residual of the linear system for v
          call norm_l1_9d_relative( nx, ny, v, bv, av, norm) ! InOutput: last one
@@ -339,15 +325,7 @@ program main
 
 
             ! Solves the linear system for pl
-
-            ! LU decomposition
-            call lu2d5(ap,dl5,du5,nxy,nx,ny)
-
-            ! Solution of the linear system using MSI
-            call fb2d5(ap,dl5,du5,ny,nx,nxy,pl,tol_p,nitm_p,bp)
-
-
-            !call tdma2d5(nx, ny, nitm_p, ap, bp, pl)
+            call solver5d%solve(ap, bp, pl)
 
             ! Velocity correction at faces (SIMPLEC method)
             call get_velocity_correction_at_faces_with_pl(nx, ny, xe, ye, xk, yk  &
@@ -482,14 +460,7 @@ program main
 
 
          ! Solves the linear system for T
-
-         ! LU decomposition
-         call lu2d9(at,dl9,du9,nxy,nx,ny)
-
-         ! Linear system solution
-         call fb2d9(at,dl9,du9,ny,nx,nxy,T,tol_u,nitm_u,bt)
-
-         !call tdma2d9(nx, ny, nitm_u, at, bt, T)
+         call solver9d%solve(at, bt, T)
 
          ! Calculates the norm of the residual of the linear system for T
          call norm_l1_9d_relative( nx, ny, T, bt, at, norm) ! InOutput: last one

@@ -2,6 +2,7 @@ module data
 
    use mod_class_ifile
    use mod_class_thermophysical_abstract
+   use mod_class_solver_abstract
 
    implicit none
 
@@ -70,8 +71,6 @@ module data
    integer :: itmax  ! Maximum number of iteractions for time cycle
    integer :: itemax ! Maximum number of iteractions for extrapolation to fictitious
    integer :: it_stop! Number of iteractions at which the time evolution cycle is interrupted
-   integer :: nitm_u ! Maximum number of iteractions for solving the linear systems for u, v and T
-   integer :: nitm_p ! Maximum number of iteractions for solving the linear system for p
    integer :: wlf    ! Frequency of printing in the listing file
    integer :: sem_a  ! 1 = do not open result files, 0 = open
    integer :: sem_g  ! 0 = visualize the plot, 1 = do not visualize
@@ -87,9 +86,11 @@ module data
    real(8) :: tcpu   ! CPU time measurement (s)
    real(8) :: tolt   ! Tolerance for the time evolution cycle
    real(8) :: tolm   ! Tolerance for the mass cycle
-   real(8) :: tol_u  !< Tolerance in the MSI for solving the linear systems for u, v and T
-   real(8) :: tol_p  !< Tolerance in the MSI for solving the linear system for p
    real(8) :: rmass  !< Norm L1 of the residual of the mass conservation equation
+
+   ! Linear system's solvers
+   class(class_solver_abstract), pointer :: solver9d
+   class(class_solver_abstract), pointer :: solver5d
 
    real(8) :: RAM    ! RAM memory (MB)
 
@@ -108,13 +109,7 @@ module data
    real(8), allocatable, dimension(:,:) :: au ! Coefficients of the linear system for u
    real(8), allocatable, dimension(:,:) :: av ! Coefficients of the linear system for v
    real(8), allocatable, dimension(:,:) :: at ! Coefficients of the linear system for T
-
    real(8), allocatable, dimension(:,:) :: ap ! Coefficients of the linear system for pl
-
-   real(8), allocatable, dimension(:,:) :: dl9 !< Lower matrix of the MSI method for 9 diagonals
-   real(8), allocatable, dimension(:,:) :: du9 !< Upper matrix of the MSI method for 9 diagonals
-   real(8), allocatable, dimension(:,:) :: dl5 !< Lower matrix of the MSI method for 5 diagonals
-   real(8), allocatable, dimension(:,:) :: du5 !< Upper matrix of the MSI method for 5 diagonals
 
    real(8), allocatable, dimension(:,:) :: a9bn !< Matrix with the coefficients of the numerical scheme for the north boundary
    real(8), allocatable, dimension(:,:) :: a9bs !< Matrix with the coefficients of the numerical scheme for the south boundary
@@ -291,10 +286,6 @@ contains
       call ifile%get_value(   itmmax,   "itmmax") ! Maximum number of iterations for mass cycle
       call ifile%get_value(   itpmax,   "itpmax") ! Maximum number of iteractions for pressure cycle
       call ifile%get_value(   itemax,   "itemax") ! Maximum number of iteractions for extrapolation to fictitious
-      call ifile%get_value(   nitm_u,   "nitm_u") ! Maximum number of iteractions for solving the linear systems for u, v and T
-      call ifile%get_value(   nitm_p,   "nitm_p") ! Maximum number of iteractions for solving the linear system for p
-      call ifile%get_value(    tol_u,    "tol_u") ! Tolerance in the MSI for solving the linear systems for u, v and T
-      call ifile%get_value(    tol_p,    "tol_p") ! Tolerance in the MSI for solving the linear system for p
       call ifile%get_value(     tolm,     "tolm") ! Tolerance for the mass cycle
       call ifile%get_value(     tolt,     "tolt") ! Tolerance for the time evolution cycle
       call ifile%get_value(      wlf,      "wlf") ! Frequency of printing in the listing file
@@ -371,11 +362,6 @@ contains
       write(fid,"(I23,' ....: ',A)")    itmmax , " itmmax - Maximum number of iterations for mass cycle"
       write(fid,"(I23,' ....: ',A)")    itpmax , " itpmax - Maximum number of iteractions for pressure cycle"
       write(fid,"(I23,' ....: ',A)")    itemax , " itemax - Maximum number of iteractions for extrapolation to fictitious"
-      write(fid,"(I23,' ....: ',A)")    nitm_u &
-      , " nitm_u - Maximum number of iteractions for solving the linear systems for u, v and T"
-      write(fid,"(I23,' ....: ',A)")    nitm_p , " nitm_p - Maximum number of iteractions for solving the linear system for p"
-      write(fid,"(ES23.16,' ....: ',A)") tol_u , " tol_u  - Tolerance in the MSI for solving the linear systems for u, v and T"
-      write(fid,"(ES23.16,' ....: ',A)") tol_p , " tol_p  - Tolerance in the MSI for solving the linear system for p"
       write(fid,"(ES23.16,' ....: ',A)") tolm  , " tolm   - Tolerance for the mass cycle"
       write(fid,"(ES23.16,' ....: ',A)") tolt  , " tolt   - Tolerance for the time evolution cycle"
       write(fid,"(I23,' ....: ',A)")    wlf    , " wlf    - Frequency of printing in the listing file"
@@ -441,8 +427,6 @@ contains
 
 
       allocate( au(nxy,9), av(nxy,9), at(nxy,9), ap(nxy,5) )
-
-      allocate( dl9(nxy,5), du9(nxy,4), dl5(nxy,4), du5(nxy,3) )
 
       allocate( fbe(nxy), fbn(nxy) )
 
@@ -585,16 +569,6 @@ contains
       Ta = 0.d0
       at = 0.d0
       bt = 0.d0
-
-      !ccu = 0.d0
-      !ccv = 0.d0
-      !cct = 0.d0
-      !ccp = 0.d0
-
-      dl9 = 0.d0
-      du9 = 0.d0
-      dl5 = 0.d0
-      du5 = 0.d0
 
       a9bn = 0.d0
       a9bs = 0.d0

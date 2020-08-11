@@ -1,13 +1,93 @@
+!>
+!! \brief "solvers" module provides 5 and 9 diagonal linear systems. It also
+!!        provides procedures for calculation of norms.
+!!
 module solvers
 
-   use mtdma2d5
-   use mtdma2d9
-   use msi2d5
-   use msi2d9
+   use mod_class_ifile
+   use mod_class_solver_abstract
+   use mod_class_solver_msi
+   use mod_class_solver_tdma
 
    implicit none
 
 contains
+
+   !> \brief Initialize solvers
+   subroutine solvers_init(nx, ny, ifile, solver5d, solver9d)
+      implicit none
+      integer,                               intent(in)  :: nx       !< Number of volumes in x
+      integer,                               intent(in)  :: ny       !< Number of volumes in y
+      class(class_ifile),                    intent(in)  :: ifile    !< Input file
+      class(class_solver_abstract), pointer, intent(out) :: solver5d !< Solver for 5 diag. systems
+      class(class_solver_abstract), pointer, intent(out) :: solver9d !< Solver for 9 diag. systems
+
+      ! Inner variables
+      character(len=100) :: ksolver ! Kind of solver
+      integer            :: nitm_u  ! Maximum number of iterations for solving the linear systems for u, v and T
+      integer            :: nitm_p  ! Maximum number of iterations for solving the linear system for p
+      real(8)            :: tol_u   ! Tolerance in the MSI for solving the linear systems for u, v and T
+      real(8)            :: tol_p   ! Tolerance in the MSI for solving the linear system for p
+
+      ! Selecting the solver
+      call ifile%get_value(ksolver, "solver")
+      call ifile%get_value(nitm_u,  "nitm_u")
+      call ifile%get_value(nitm_p,  "nitm_p")
+      call ifile%get_value(tol_u,    "tol_u")
+      call ifile%get_value(tol_p,    "tol_p")
+
+      ! Allocating the solvers
+      if ( trim(ksolver) == "MSI") then
+
+         allocate( class_solver_msi5d::solver5d )
+         allocate( class_solver_msi9d::solver9d )
+
+      else if ( trim(ksolver) == "TDMA") then
+
+         allocate( class_solver_tdma5d::solver5d )
+         allocate( class_solver_tdma9d::solver9d )
+
+      else
+
+         write(*,*) "solvers_init:"
+         write(*,*) "Unkown option: ", trim(ksolver)
+         write(*,*) "Stopping..."
+         stop
+
+      end if
+
+
+      ! Initializing the solver5d
+      select type (solver5d)
+
+         type is ( class_solver_msi5d )
+
+            call solver5d%init(nx, ny, nitm_p, tol_p)
+
+         type is ( class_solver_tdma5d )
+
+            call solver5d%init(nx, ny, nitm_p)
+
+      end select
+
+
+      ! Initializing the solver9d
+      select type (solver9d)
+
+         type is ( class_solver_msi9d )
+
+            call solver9d%init(nx, ny, nitm_u, tol_u)
+            print*,"ok"
+
+         type is ( class_solver_tdma9d )
+
+            call solver9d%init(nx, ny, nitm_u)
+
+      end select
+
+   end subroutine
+
+
 
    subroutine norm_l1_5d( nx, ny, var, b, a, norm)
       implicit none
