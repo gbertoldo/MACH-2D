@@ -52,6 +52,15 @@
 		<Unit filename="geometry_splwsp.f90">
 			<Option weight="1" />
 		</Unit>
+		<Unit filename="grid/mod_grid.f90">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="grid/mod_grid_data.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="grid/mod_grid_procedures.f90">
+			<Option weight="1" />
+		</Unit>
 		<Unit filename="mach2d_bc5d.f90">
 			<Option weight="0" />
 		</Unit>
@@ -62,10 +71,7 @@
 			<Option weight="0" />
 		</Unit>
 		<Unit filename="mach2d_data.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="mach2d_grid.f90">
-			<Option weight="1" />
+			<Option weight="3" />
 		</Unit>
 		<Unit filename="mach2d_main.f90">
 			<Option weight="4" />

@@ -2,7 +2,8 @@
 program main
 
    use data
-   use grid
+   use mod_grid
+   use mod_grid_data, only: rb, lr
    use user
    use coefficients
    use solvers
@@ -24,44 +25,10 @@ program main
    call get_free_stream_properties(thermomodel, PF, TF, MF, CPF, GF, VLF, KPF, PRF, ROF, UF, REFm, HF) ! Output: last 9
 
 
-   ! Getting the finest grid
-
-   ! Generates the grid north and south boundary
-   call get_grid_boundary(nxf, nyf, lid, fgeom, lr, rb, xf, yf) ! Output: last four
-
-
-   ! Estimates the boundary layer width and the width of the volume
-   ! closer to the wall
-   call get_boundary_layer_width_estimate(lr, REFm, cbl, wbl, a1) ! Output: last two
-
-
-   ! Generates the grid according to kg option
-   call set_grid(kg, nxf, nyf, a1, avi, avf, awf, xf, yf) ! Last 2 are inoutput
-
-
-   ! Selecting the desided grid
-   call get_coarser_grid(nxf, nyf, nx, ny, nmf, nmd, xf, yf, x, y)
-
-
-   ! Removing the (now) unnecessary finest grid
-   deallocate(xf, yf)
-
-
-   ! Calculates the centroids of each real volume
-   call get_real_centroids_xy( kcm, nx, ny, x, y, xp, yp ) ! Output: last two
-   ! checked
-
-   ! Calculates the components of the metric tensor and the Jacobian
-   call get_metrics(nx, ny, x, y, xp, yp             & ! Input
-   ,          xe, ye, xen, yen, xk, yk, xke, yke, Jp & ! Output
-   ,          Je, Jn, alphae, gamman, betae, betan )   ! Output
-   ! checked
-
-
-   ! All the radii are equal 1 if planar flow is choose. If axisymmetric flow, radii are calculated
-   call get_radius(coord, nx, ny, y, yp  & ! Input
-   ,               radius, re, rn, rp    ) ! Output
-   ! checked
+   ! Creating the grid and calculating the metrics
+   call grid_create(lid, coord, REFm                                  & ! Input
+         ,  x, y, xp, yp, xe, ye, xen, yen, xk, yk, xke, yke, Jp      & ! Output
+         ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp  ) ! Output
 
 
 

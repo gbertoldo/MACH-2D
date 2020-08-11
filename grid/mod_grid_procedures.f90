@@ -1,4 +1,7 @@
-module grid
+!>
+!! \brief mod_grid_procedures contains procedures to operate on grid data
+!!
+module mod_grid_procedures
 
    use thompson2d_hyperbolic, only: get_thompson2d_hyperbolic_01
 
@@ -851,4 +854,4 @@ contains
    end subroutine get_radius
 
 
-end module grid
+end module

@@ -3,6 +3,7 @@ module data
    use mod_class_ifile
    use mod_class_thermophysical_abstract
    use mod_class_solver_abstract
+   use mod_grid
 
    implicit none
 
@@ -16,28 +17,11 @@ module data
    !
    integer :: nx    ! number of volumes in the csi direction (real+fictitious)
    integer :: ny    ! number of volumes in the eta direction (real+fictitious)
-   integer :: nxi   ! number of volumes in the csi direction (real+fictitious) of the coarsest grid
-   integer :: nyi   ! number of volumes in the eta direction (real+fictitious) of the coarsest grid
-   integer :: nxf   ! number of volumes in the csi direction (real+fictitious) of the finest grid
-   integer :: nyf   ! number of volumes in the eta direction (real+fictitious) of the finest grid
    integer :: nxy   ! nxy = nx * ny
-   integer :: nmf   ! number of the finest mesh
-   integer :: nmd   ! number of the desired mesh
-   integer :: kg    ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified)
-   integer :: kcm   ! Kind of centroid mean (1=simple mean, 2=weighted mean)
    integer :: coord ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
-   real(8) :: a1    ! width of the volume closer to the wall (m)
-   real(8) :: avi   ! Initial value of the artificial viscosity
-   real(8) :: avf   ! Final value of the artificial viscosity
-   real(8) :: awf   ! Area weighting factor
-   real(8) :: cbl   ! The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
-   real(8) :: wbl   ! Boundary layer estimated width (m)
-
 
    real(8), allocatable, dimension(:) :: x   ! coord. at the northeast corner of the volume P
    real(8), allocatable, dimension(:) :: y   ! coord. at the northeast corner of the volume P
-   real(8), allocatable, dimension(:) :: xf  ! coord. at the northeast corner of the volume P of the finest grid
-   real(8), allocatable, dimension(:) :: yf  ! coord. at the northeast corner of the volume P of the finest grid
    real(8), allocatable, dimension(:) :: xp  ! Coord. x of the centroid of volume P
    real(8), allocatable, dimension(:) :: yp  ! Coord. y of the centroid of volume P
    real(8), allocatable, dimension(:) :: xe  ! x_eta at face east of volume P
@@ -137,9 +121,6 @@ module data
    !
    integer :: iocs ! index of the matching point between the ogive and the cylinder
    integer :: kfc  ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
-   real(8) :: lr   ! length of the rocket
-   real(8) :: rb   ! base radius of the rocket
-   character(len=200) :: fgeom !< File of the geometric parameters
 
    !
    ! FILE ID NUMBERS
@@ -149,10 +130,9 @@ module data
    integer, parameter :: rid  = 101 ! Residual file id
 
 
-   character (len=20) :: date ! System date
-   character (len=20) :: time ! System time
+   character (len=20)    :: date   ! System date
+   character (len=20)    :: time   ! System time
    character (len = 100) :: sim_id ! Simulation identification
-   character (len = 100) :: input_file_parameters ! Input parameters data file
 
    !
    ! GAS PROPERTIES AND VARIABLES
@@ -254,6 +234,8 @@ contains
 
    subroutine get_parameters
       implicit none
+
+      character (len = 100) :: input_file_parameters ! Input parameters data file
       !
       call date_time(date, time)
       !
@@ -270,18 +252,7 @@ contains
 
       ! Getting desired parameters
       call ifile%get_value(   sim_id,   "sim_id") ! Simulation identification  (up to 100 characters)
-      call ifile%get_value(      nxi,    "nxi-2") ! Number of real volumes in the csi direction of the coarsest grid
-      call ifile%get_value(      nyi,    "nyi-2") ! Number of real volumes in the eta direction of the coarsest grid
-      call ifile%get_value(      nmf,      "nmf") ! Number of the finest mesh  (1<=nmf)
-      call ifile%get_value(      nmd,      "nmd") ! Number of the desired mesh (1<=nmd<=nmf)
-      call ifile%get_value(    fgeom,    "fgeom") ! File of the geometric parameters
-      call ifile%get_value(       kg,       "kg") ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
-      call ifile%get_value(      avi,      "avi") ! Initial value of the artificial viscosity (only for kg=5)
-      call ifile%get_value(      avf,      "avf") ! Final value of the artificial viscosity (only for kg=5)
-      call ifile%get_value(      awf,      "awf") ! Area weighting factor (only for kg=5)
-      call ifile%get_value(      kcm,      "kcm") ! Kind of centroid mean (1=simple mean, 2=weighted mean)
       call ifile%get_value(    coord,    "coord") ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
-      call ifile%get_value(      cbl,      "cbl") ! The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
       call ifile%get_value(    itmax,    "itmax") ! Maximum number of iterations for time cycle
       call ifile%get_value(   itmmax,   "itmmax") ! Maximum number of iterations for mass cycle
       call ifile%get_value(   itpmax,   "itpmax") ! Maximum number of iteractions for pressure cycle
@@ -302,25 +273,13 @@ contains
       call ifile%get_value(       TF,       "TF") ! Far field temperature (K)
       call ifile%get_value(       MF,       "MF") ! Mach number of the free stream
 
-      ! After reading the values of nxi and nyi, these variables must be
-      ! changed to take into accout the fictitious volumes
-
-      nxi = nxi + 2
-      nyi = nyi + 2
-
-
-      ! Calculating the number of volumes (real+fictitious) of the finest mesh
-
-      nxf = (nxi-2) * 2 ** (nmf-1) + 2
-      nyf = (nyi-2) * 2 ** (nmf-1) + 2
-
-
+      ! Initializing the grid module
+      call grid_init(ifile)
 
       ! Calculating the number of volumes (real+fictitious) of the desired mesh
+      call grid_size( nx, ny)
 
-      nx = (nxi-2) * 2 ** (nmd-1) + 2
-      ny = (nyi-2) * 2 ** (nmd-1) + 2
-
+      ! Number of volumes of the grid
       nxy = nx * ny
 
    end subroutine get_parameters
@@ -331,7 +290,6 @@ contains
       integer, intent(in) :: fid
 
   100 format( "'", A21, "'",' ....: ',A)
-  101 format( "'", A  , "'",' ....: ',A)
 
       write(fid,*)
       write(fid,*) "Date: ", date
@@ -340,24 +298,9 @@ contains
       write(fid,*) "          PARAMETERS         "
       write(fid,*)
       write(fid,                100) trim(adjustl(sim_id)) , " Simulation identification  (up to 100 characters)"
-      write(fid,"(I23,' ....: ',A)")   nmf     , " nmf    - Number of the finest mesh  (1<=nmf)"
-      write(fid,"(I23,' ....: ',A)")   nmd     , " nmd    - Number of the desired mesh (1<=nmd<=nmf)"
       write(fid,"(I23,' ....: ',A)")    nx     , " nx     - Number of real+ficititious volumes in the csi direction (desired grid)"
       write(fid,"(I23,' ....: ',A)")    ny     , " ny     - Number of real+ficititious volumes in the eta direction (desired grid)"
-      write(fid,"(I23,' ....: ',A)")   nxi     , " nxi    - Number of real+ficititious volumes in the csi direction (coarsest grid)"
-      write(fid,"(I23,' ....: ',A)")   nyi     , " nyi    - Number of real+ficititious volumes in the eta direction (coarsest grid)"
-      write(fid,"(I23,' ....: ',A)")   nxf     , " nxf    - Number of real+ficititious volumes in the csi direction (finest grid)"
-      write(fid,"(I23,' ....: ',A)")   nyf     , " nyf    - Number of real+ficititious volumes in the eta direction (finest grid)"
-      write(fid,                101) trim(adjustl(fgeom))  , " fgeom  - File of the geometric parameters"
-      write(fid,"(I23,' ....: ',A)")    kg     , " kg     - Kind of grid (1=uniform, 2=geometric progression, 3=power law," &
-      // " 4=gp modified)"
-      write(fid,"(ES23.16,' ....: ',A)") avi   , " Initial value of the artificial viscosity (only for kg=5)"
-      write(fid,"(ES23.16,' ....: ',A)") avf   , " Final value of the artificial viscosity (only for kg=5)"
-      write(fid,"(ES23.16,' ....: ',A)") awf   , " Area weighting factor (only for kg=5)"
-      write(fid,"(I23,' ....: ',A)")    kcm    , " kcm    - Kind of centroid mean (1=simple mean, 2=weighted mean)"
       write(fid,"(I23,' ....: ',A)")    coord  , " coord  - Kind of coord. system ( 1=cylindrical, 0 = cartesian)"
-      write(fid,"(ES23.16,' ....: ',A)") cbl    , " cbl    - The width of the vol. closer to the wall is 'cbl' times the " &
-         // "width of the b. layer"
       write(fid,"(I23,' ....: ',A)")    itmax  , " itmax  - Maximum number of iterations for time cycle"
       write(fid,"(I23,' ....: ',A)")    itmmax , " itmmax - Maximum number of iterations for mass cycle"
       write(fid,"(I23,' ....: ',A)")    itpmax , " itpmax - Maximum number of iteractions for pressure cycle"
@@ -401,10 +344,6 @@ contains
       ,         vea(nxy),      una(nxy),      vna(nxy),         bp(nxy),         pl(nxy)  &
       ,          Ta(nxy),       bt(nxy),       pa(nxy),         g(nxy) )
 
-
-      !allocate( ccu(nxy), ccv(nxy), cct(nxy), ccp(nxy) )
-
-      allocate( xf(nxf*nyf), yf(nxf*nyf) )
 
       allocate( ube(ny), ubw(ny), ubn(nx), ubs(nx) )
       allocate( vbe(ny), vbw(ny), vbn(nx), vbs(nx) )
@@ -457,8 +396,6 @@ contains
 
       x   = 0.d0
       y   = 0.d0
-      xf  = 0.d0
-      yf  = 0.d0
       xp  = 0.d0
       yp  = 0.d0
       xe  = 0.d0
