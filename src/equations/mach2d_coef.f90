@@ -1937,4 +1937,57 @@ contains
 
    end subroutine initialize_boundary_faces_flags
 
+
+
+   !> \brief Checks the mass conservation
+   subroutine check_mass_conservation(nx, ny, dt, rp, re, rn, Jp, ro, roa &
+      , ron, roe, Uce, Vcn, res) ! Output: last one
+      implicit none
+      integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
+      integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
+      real(8), intent(in) :: dt     ! Time step
+      real(8), dimension (nx*ny), intent(in) :: rp     ! Radius of the center of volume P
+      real(8), dimension (nx*ny), intent(in) :: re     ! Radius of the center of east face of volume P
+      real(8), dimension (nx*ny), intent(in) :: rn     ! Radius of the center of north face of volume P
+      real(8), dimension (nx*ny), intent(in) :: Jp     ! Jacobian at the center of volume P
+      real(8), dimension (nx*ny), intent(in) :: ro     ! Absolute density at center of vol. P
+      real(8), dimension (nx*ny), intent(in) :: roa    ! Absolute density at a time step before at center of vol. P
+      real(8), dimension (nx*ny), intent(in) :: roe    ! Absolute density at east face
+      real(8), dimension (nx*ny), intent(in) :: ron    ! Absolute density at north face
+      real(8), dimension (nx*ny), intent(in) :: Uce    ! Contravariant velocity U at east face
+      real(8), dimension (nx*ny), intent(in) :: Vcn    ! Contravariant velocity V at north face
+      real(8), intent(out) :: res ! Norm L1 of the residual of mass conservation
+
+
+      ! Inner variables
+
+      integer :: i, j, np, nps, npw
+      real(8) :: fme, fmw, fmn, fms
+
+      res = 0.d0
+
+      do j = 2, ny-1
+
+         do i = 2, nx-1
+
+            np   = nx * (j-1) + i
+            nps  = np - nx
+            npw  = np - 1
+
+            fme = roe(np)  * re(np)  * Uce(np)
+            fmw = roe(npw) * re(npw) * Uce(npw)
+            fmn = ron(np)  * rn(np)  * Vcn(np)
+            fms = ron(nps) * rn(nps) * Vcn(nps)
+
+            res = res + abs( ( ro(np)-roa(np) ) * rp(np) / ( Jp(np) * dt ) &
+
+               + fme-fmw + fmn-fms )
+
+         end do
+
+      end do
+
+   end subroutine check_mass_conservation
+
+
 end module coefficients

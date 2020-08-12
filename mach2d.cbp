@@ -31,110 +31,134 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="class_ifile.f90">
+		<Unit filename="src/boundary_conditions/mach2d_bc5d.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="depp_interface.f90">
+		<Unit filename="src/boundary_conditions/mach2d_bc9d.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="geometry_d2cspline.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="geometry_ncspline.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="geometry_spline_s01.f90">
+		<Unit filename="src/equations/blomax.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="geometry_splwep.f90">
+		<Unit filename="src/equations/mach2d_coef.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="geometry_splwsp.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="grid/mod_grid.f90">
-			<Option weight="2" />
-		</Unit>
-		<Unit filename="grid/mod_grid_data.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="grid/mod_grid_procedures.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="mach2d_bc5d.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="mach2d_bc9d.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="mach2d_coef.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="mach2d_data.f90">
-			<Option weight="3" />
-		</Unit>
-		<Unit filename="mach2d_main.f90">
+		<Unit filename="src/grid/mod_grid.f90">
 			<Option weight="4" />
 		</Unit>
-		<Unit filename="mach2d_postp.f90">
+		<Unit filename="src/grid/mod_grid_data.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/grid/mod_grid_procedures.f90">
 			<Option weight="1" />
 		</Unit>
-		<Unit filename="mach2d_thermo.f90">
+		<Unit filename="src/grid/thompson2d_hyperbolic.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/mach2d_main.f90">
+			<Option weight="7" />
+		</Unit>
+		<Unit filename="src/mod_mach2d_data.f90">
+			<Option weight="5" />
+		</Unit>
+		<Unit filename="src/optimizers/depp_interface.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/mod_solver_abstract.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/mod_solver_msi.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/solvers/mod_solver_tdma.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/solvers/mod_solvers.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/msi2d5-v03.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/msi2d9-v03.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/tdma2d5.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/solvers/tdma2d9.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/thermophysical/mod_class_thermophysical_abstract.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/thermophysical/mod_class_thermophysical_constant.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/thermophysical/mod_class_thermophysical_mixture.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/thermophysical/mod_thermophysical.f90">
 			<Option weight="2" />
 		</Unit>
-		<Unit filename="mach2d_user.f90">
+		<Unit filename="src/tstepper/mod_tstepper.f90">
+			<Option weight="2" />
+		</Unit>
+		<Unit filename="src/tstepper/mod_tstepper_ramp.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/tstepper/mod_tstepper_scarborough.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/user/external_flow/geometry_d2cspline.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/user/external_flow/geometry_ncspline.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/user/external_flow/geometry_spline_s01.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/user/external_flow/geometry_splwep.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/user/external_flow/geometry_splwsp.f90">
+			<Option weight="1" />
+		</Unit>
+		<Unit filename="src/user/external_flow/mod_extflow.f90">
 			<Option weight="3" />
 		</Unit>
-		<Unit filename="newton2coef.f90">
+		<Unit filename="src/user/external_flow/mod_extflow_data.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="solvers/mach2d_solvers.f90">
+		<Unit filename="src/user/external_flow/mod_extflow_geometry.f90">
 			<Option weight="2" />
 		</Unit>
-		<Unit filename="solvers/mod_solver_abstract.f90">
-			<Option weight="0" />
+		<Unit filename="src/user/external_flow/mod_extflow_postp.f90">
+			<Option weight="6" />
 		</Unit>
-		<Unit filename="solvers/mod_solver_msi.f90">
+		<Unit filename="src/user/external_flow/mod_extflow_procedures.f90">
 			<Option weight="1" />
 		</Unit>
-		<Unit filename="solvers/mod_solver_tdma.f90">
+		<Unit filename="src/user/external_flow/newton2coef.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/user/external_flow/spline.f90">
+			<Option weight="0" />
+		</Unit>
+		<Unit filename="src/user/mod_postp_procedures.f90">
 			<Option weight="1" />
 		</Unit>
-		<Unit filename="solvers/msi2d5-v03.f90">
+		<Unit filename="src/util/class_ifile.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="solvers/msi2d9-v03.f90">
+		<Unit filename="src/util/mod_error_handler.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="solvers/tdma2d5.f90">
+		<Unit filename="src/util/mod_field_operations.f90">
 			<Option weight="0" />
 		</Unit>
-		<Unit filename="solvers/tdma2d9.f90">
+		<Unit filename="src/util/mod_system.f90">
 			<Option weight="0" />
-		</Unit>
-		<Unit filename="spline.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="thermophysical/mod_class_thermophysical_abstract.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="thermophysical/mod_class_thermophysical_constant.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="thermophysical/mod_class_thermophysical_mixture.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="thompson2d_hyperbolic.f90">
-			<Option weight="0" />
-		</Unit>
-		<Unit filename="tstepper/mod_tstepper.f90">
-			<Option weight="2" />
-		</Unit>
-		<Unit filename="tstepper/mod_tstepper_ramp.f90">
-			<Option weight="1" />
-		</Unit>
-		<Unit filename="tstepper/mod_tstepper_scarborough.f90">
-			<Option weight="1" />
 		</Unit>
 		<Extensions />
 	</Project>

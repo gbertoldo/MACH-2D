@@ -9,6 +9,7 @@ module mod_grid_procedures
 
 contains
 
+   !> \brief Generates the grid provided the south and north boundaries of the domain
    subroutine set_grid(kg, nx, ny, a1, avi, avf, awf, x, y) ! Last 2 are inoutput
       implicit none
       integer, intent(in)  :: kg ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified)
@@ -51,6 +52,8 @@ contains
 
    end subroutine set_grid
 
+
+   !> \brief Generates a coarser grid from a given grid
    subroutine get_coarser_grid(nxf, nyf, nx, ny, nmf, nmd, xf, yf, x, y)
       implicit none
       integer, intent(in)  :: nxf
@@ -94,6 +97,7 @@ contains
    end subroutine
 
 
+   !> \brief Generates a uniform partitioned grid
    subroutine get_uniform_grid( nx, ny, x, y) ! Last 2 are inoutput
       implicit none
       integer, intent(in)  :: nx
@@ -130,6 +134,7 @@ contains
    end subroutine get_uniform_grid
 
 
+   !> \brief Generates a grid with a non-uniform power-law distribution
    subroutine get_power_grid(a1, nx, ny, x, y) ! Last 2 are inoutput
       implicit none
       integer, intent(in)  :: nx
@@ -180,6 +185,7 @@ contains
    end subroutine get_power_grid
 
 
+   !> \brief Generates a grid with a non-uniform geometric progression dist.
    subroutine get_pg_grid(a1, nx, ny, x, y) ! Last 2 are inoutput
       implicit none
       integer, intent(in)  :: nx
@@ -227,6 +233,8 @@ contains
 
    end subroutine get_pg_grid
 
+
+   !> \brief Generates a grid with a non-uniform geometric progression of type 2 dist.
    subroutine get_pg_grid2(a1, nx, ny, x, y) ! Last 2 are inoutput
       implicit none
       integer, intent(in)  :: nx
@@ -294,6 +302,7 @@ contains
    end subroutine get_pg_grid2
 
 
+   !> \brief Calculates the geometric progression ratio
    subroutine get_gp_ratio(n, r, q)
      implicit none
      integer, intent(in)  ::   n !< number of partitions
@@ -367,6 +376,8 @@ contains
 
    end subroutine get_gp_ratio
 
+
+   !> \brief Calculates the centroids of the volumes
    subroutine get_real_centroids_xy( opt, nx, ny, x, y & ! Input
       ,                            xp, yp )            ! Output
       implicit none
@@ -433,6 +444,7 @@ contains
    end subroutine get_real_centroids_xy
 
 
+   !> \brief Calculates the metrics of coordinate transformation
    subroutine get_metrics(nx, ny, x, y, xp, yp            & ! Input
       ,          xe, ye, xen, yen, xk, yk, xke, yke, Jp & ! Output
       ,          Je, Jn, alphae, gamman, betae, betan )   ! Output
@@ -690,6 +702,7 @@ contains
    end subroutine get_metrics
 
 
+   !> \brief Calculates the radius for axisymmetric flows
    subroutine get_radius(coord, nx, ny, y, yp & ! Input
       ,                radius, re, rn, rp   ) ! Output
       implicit none

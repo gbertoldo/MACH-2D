@@ -3,7 +3,7 @@
 !!        model. It also provides subroutines for calculation of thermophysical
 !!        properties on the calculation domain.
 !!
-module thermophysical
+module mod_thermophysical
 
    use mod_class_ifile
    use mod_class_thermophysical_abstract
@@ -499,5 +499,87 @@ contains
       end do
 
    end subroutine get_thermal_conductivity_at_faces
+
+
+   !> \brief Initializes the vectors with specific heat Cp, viscosity mu
+   !!  and thermal conductivity kappa based on the reference temperature Tref.
+   subroutine get_cp_mu_kappa_initialization(nx, ny, ktm, modvis, thermomodel & ! Input
+         ,                                        Tref, Tbn, Tbs, Tbe, Tbw, T & ! Input
+         ,                                      cp, vlp, vle, vln, kp, ke, kn ) ! Output
+      implicit none
+      integer,                   intent(in) ::     nx !< Number of volumes in csi direction (real+fictitious)
+      integer,                   intent(in) ::     ny !< Number of volumes in eta direction (real+fictitious)
+      integer,                   intent(in) ::    ktm !< Kind of thermophysical model ( 0 = constant, 1 = T dependent )
+      integer,                   intent(in) :: modvis !< Viscosity model (0=Euler, 1=NS)
+      real(8),                   intent(in) ::   Tref !< Reference temperature (K))
+      class(class_thermophysical_abstract), pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
+      real(8), dimension(nx),    intent(in)  ::   Tbn !< Temperature over the north boundary (K)
+      real(8), dimension(nx),    intent(in)  ::   Tbs !< Temperature over the south boundary (K)
+      real(8), dimension(ny),    intent(in)  ::   Tbe !< Temperature over the  east boundary (K)
+      real(8), dimension(ny),    intent(in)  ::   Tbw !< Temperature over the  west boundary (K)
+      real(8), dimension(nx*ny), intent(in)  ::     T !< Temperature of the last iteraction (K)
+      real(8), dimension(nx*ny), intent(out) ::    cp !< Specific heat at const pressure (J/(kg.K))
+      real(8), dimension(nx*ny), intent(out) ::   vlp !< Laminar viscosity at center of volume P (Pa.s)
+      real(8), dimension(nx*ny), intent(out) ::   vle !< Laminar viscosity at center of face east (Pa.s)
+      real(8), dimension(nx*ny), intent(out) ::   vln !< Laminar viscosity at center of face north (Pa.s)
+      real(8), dimension(nx*ny), intent(out) ::    kp !< Thermal conductivity at center of volume P (W/m.K)
+      real(8), dimension(nx*ny), intent(out) ::    ke !< Thermal conductivity at center of face east (W/m.K)
+      real(8), dimension(nx*ny), intent(out) ::    kn !< Thermal conductivity at center of face north (W/m.K)
+
+
+      if ( ktm == 0 ) then ! Constant thermophysical properties
+
+         cp = thermomodel%cp(Tref)
+
+         ! Thermophysical properties for the Navier-Stokes equations only
+
+         if ( modvis == 1 ) then
+
+            vlp = thermomodel%mu(Tref)
+
+            vle = thermomodel%mu(Tref)
+
+            vln = thermomodel%mu(Tref)
+
+            kp = thermomodel%kp(Tref)
+
+            ke = thermomodel%kp(Tref)
+
+            kn = thermomodel%kp(Tref)
+
+         end if
+
+      else ! Temperature dependent thermophysical properties
+
+         ! Calculates cp at the center of each real volume
+         call set_cp(nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+
+
+         ! Thermophysical properties for the Navier-Stokes equations only
+
+         if ( modvis == 1 ) then
+
+            ! Calculates the laminar viscosity at the nodes of real volumes
+            call set_laminar_viscosity_at_nodes(nx, ny, T, vlp)
+            ! Output: last one
+
+
+            ! Calculates the thermal conductivity at the nodes of real volumes
+            call set_thermal_conductivity_at_nodes(nx, ny, T, kp)
+            ! Output: last one
+
+
+            ! Calculates the laminar viscosity at faces
+            call get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+
+
+            ! Calculates the thermal conductivity at faces
+            call get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+
+         end if
+
+      end if
+
+   end subroutine get_cp_mu_kappa_initialization
 
 end module

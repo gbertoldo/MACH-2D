@@ -1,8 +1,8 @@
 !>
-!! \brief "solvers" module provides 5 and 9 diagonal linear systems' solvers. It
-!!        also provides procedures for calculation of norms.
+!! \brief "mod_solvers" module provides 5 and 9 diagonal linear systems' solvers.
+!!        It also provides procedures for calculation of norms.
 !!
-module solvers
+module mod_solvers
 
    use mod_class_ifile
    use mod_class_solver_abstract
@@ -77,7 +77,6 @@ contains
          type is ( class_solver_msi9d )
 
             call solver9d%init(nx, ny, nitm_u, tol_u)
-            print*,"ok"
 
          type is ( class_solver_tdma9d )
 
@@ -276,4 +275,4 @@ contains
 
    end function
 
-end module solvers
+end module

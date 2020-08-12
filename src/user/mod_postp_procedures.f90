@@ -1,10 +1,10 @@
-module postp
+!>
+!! \brief Contains procedures for post-processing data
+!!
+module mod_postp_procedures
 
    use mod_class_thermophysical_abstract
-
-   character (len = *), parameter :: text_editor     = "emacs -nw "
-   character (len = *), parameter :: graph_viewer    = "evince "
-   character (len = *), parameter :: graph_generator = "gnuplot "
+   use mod_system
 
 contains
 
@@ -37,6 +37,7 @@ contains
 
    end subroutine plotter02
 
+
    !> \brief Generates the boundary grid plot.
    subroutine plotter04( sem_g, sim_id)
       implicit none
@@ -67,6 +68,7 @@ contains
       if ( sem_g == 0 ) call system( graph_viewer // trim(adjustl(str3)) )
 
    end subroutine plotter04
+
 
    !> \brief Generates the grid plot.
    subroutine plotter05( sem_g, sim_id)
@@ -136,6 +138,7 @@ contains
 
    end subroutine plotter06
 
+
    !> \brief Generates the plots of u, v, T and p over the boundaries.
    subroutine plotter07( sim_id)
       implicit none
@@ -158,6 +161,7 @@ contains
       call system( graph_generator // trim(adjustl(str2)) )
 
    end subroutine plotter07
+
 
    !> \brief Plots the convergence coefficients of the linear systems for
    !! u, v, T and p'
@@ -225,7 +229,6 @@ contains
    end subroutine
 
 
-
    !> \brief Writes the gas composition and its properties for a reference
    !! temperature
    subroutine write_gas_properties(unt, Tr, thermomodel)
@@ -264,89 +267,7 @@ contains
    end subroutine write_gas_properties
 
 
-   !> \brief Writes some of the free stream properties of the gas
-   subroutine write_free_stream_properties(unt, lr, rb, PF, TF, MF, CPF, GF &
-      , VLF, KPF, PRF, ROF, UF, REFm)
-      implicit none
-      integer, intent(in) ::  unt !< Unit where the results will be printed
-      real(8), intent(in) ::   lr !< Length of the body (m)
-      real(8), intent(in) ::   rb !< Base radius of the body (m)
-      real(8), intent(in) ::   PF !< Free stream pressure (Pa)
-      real(8), intent(in) ::   TF !< Free stream temperature (K)
-      real(8), intent(in) ::   MF !< Free stream Mach number
-      real(8), intent(in) ::  CPF !< Free stream Cp (J/kg.K)
-      real(8), intent(in) ::   GF !< Free stream gamma
-      real(8), intent(in) ::  VLF !< Free stream viscosity (Pa.s)
-      real(8), intent(in) ::  KPF !< Free stream thermal conductivity (W/m.K)
-      real(8), intent(in) ::  PRF !< Free stream Prandtl number
-      real(8), intent(in) ::  ROF !< Free stream density (kg/m3)
-      real(8), intent(in) ::   UF !< Free stream speed (m/s)
-      real(8), intent(in) :: REFm !< Free stream Reynolds number per meter (1/m)
-
-      ! Parameters
-
-      real(8), parameter :: pi = dacos(-1.d0)
-
-      ! Inner variables
-
-      real(8) :: REFl ! Free stream Reynolds number (length based)
-      real(8) :: REFr ! Free stream Reynolds number (radius based)
-      real(8) :: KNFl ! Knudsen number based on REFl
-      real(8) :: KNFr ! Knudsen number based on REFr
-
-      ! Free stream Reynolds number (length based)
-      REFl = REFm * lr
-
-      ! Free stream Reynolds number (radius based)
-      REFr = REFm * rb
-
-      ! Knudsen number based on REFl
-      KNFl = sqrt( pi * GF / 2.d0 ) * MF / REFl
-
-      ! Knudsen number based on REFr
-      KNFr = sqrt( pi * GF / 2.d0 ) * MF / REFr
-
-      write(unt,*)
-      write(unt,*) " *** Free stream properties *** "
-      write(unt,*)
-
-      write(unt,"(ES23.16,A)")   GF, " =   GF: free stream gamma"
-      write(unt,"(ES23.16,A)")  CPF, " =  CPF: free stream Cp (J/kg.K)"
-      write(unt,"(ES23.16,A)")  VLF, " =  VLF: free stream viscosity (Pa.s)"
-      write(unt,"(ES23.16,A)")  KPF, " =  KPF: free stream thermal conductivity (W/m.K)"
-      write(unt,"(ES23.16,A)")  PRF, " =  PRF: free stream Prandtl number"
-      write(unt,"(ES23.16,A)")   PF, " =   PF: free stream pressure (Pa)"
-      write(unt,"(ES23.16,A)")   TF, " =   TF: free stream temperature (K)"
-      write(unt,"(ES23.16,A)")  ROF, " =  ROF: free stream density (kg/m3)"
-      write(unt,"(ES23.16,A)")   MF, " =   MF: free stream Mach number"
-      write(unt,"(ES23.16,A)")   UF, " =   UF: free stream speed (m/s)"
-      write(unt,"(ES23.16,A)") REFm, " = REFm: free stream Reynolds number per meter (1/m)"
-      write(unt,"(ES23.16,A)") REFl, " = REFl: free stream Reynolds number (length based)"
-      write(unt,"(ES23.16,A)") REFr, " = REFr: free stream Reynolds number (radius based)"
-      write(unt,"(ES23.16,A)") KNFl, " = KNFl: Knudsen number based on REFl"
-      write(unt,"(ES23.16,A)") KNFr, " = KNFr: Knudsen number based on REFr"
-
-   end subroutine write_free_stream_properties
-
-
-   subroutine write_body_parameters( unit, lr, rb) ! Output: last entry
-      implicit none
-      integer, intent(in) :: unit ! Unit to which the results will be printed
-      real(8), intent(in) :: lr   ! length of the rocket
-      real(8), intent(in) :: rb   ! base radius of the rocket
-
-      write(unit,*)
-      write(unit,*)
-      write(unit,*) '*** Body parameters ***'
-      write(unit,*)
-      write(unit,"(ES23.16,A)") lr, " = lr: Body length (m)"
-      write(unit,"(ES23.16,A)") rb, " = rb: Body base radius (m)"
-      write(unit,"(ES23.16,A)") lr/(2*rb), " = lr / (2 rb): Body length to base diameter ratio (dimensionless)"
-
-
-   end subroutine write_body_parameters
-
-
+   !> \brief Writes grid parameters
    subroutine write_grid_parameters( nx, ny, unit, x, y)
       implicit none
       integer, intent(in) :: nx   ! Number of volumes in csi direction (real+fictitious)
@@ -452,6 +373,7 @@ contains
    end subroutine write_grid_parameters
 
 
+   !> \brief Writes boundary points of the grid
    subroutine write_grid_boundary( nx, ny, w_g, sim_id, x, y)
       implicit none
       integer, intent(in) :: nx   ! Number of volumes in csi direction (real+fictitious)
@@ -531,6 +453,7 @@ contains
    end subroutine write_grid_boundary
 
 
+   !> \brief Writes the grid
    subroutine write_grid(nx, ny, w_g, sim_id, x, y)
       implicit none
       integer, intent(in) :: nx   ! Number of volumes in csi direction (real+fictitious)
@@ -581,35 +504,7 @@ contains
    end subroutine write_grid
 
 
-   ! Print main data to a file
-   subroutine write_main_results(unit, it, norm, dt, tcpu, RAM, Cdfi, Cdfv)
-      implicit none
-      integer, intent(in) :: unit  ! Unit to which the results will be printed
-      integer, intent(in) :: it     ! final number of iteractions for time evolution
-      real(8), intent(in) :: norm   ! Norm L1 of the residuals of the last it.
-      real(8), intent(in) :: dt     ! dt of the last iteraction (s)"
-      real(8), intent(in) :: tcpu   ! Total time (before and after simulation interruption)
-      real(8), intent(in) :: RAM    ! RAM memory (MB)
-      real(8), intent(in) :: Cdfi   ! Pressure foredrag coefficient
-      real(8), intent(in) :: Cdfv   ! Viscous foredrag coefficient
-
-      write(unit,*)
-      write(unit,*)
-      write(unit,*) "*** Main results ***"
-      write(unit,*)
-      write(unit,"(ES23.15,A)")     norm, ' =  norm: sum of the relative norm' &
-         // ' L1 of the residuals of the linear systems for u, v, T and pl'
-      write(unit,"(ES23.15,A)")      RAM, " =   RAM: Memory (MB)"
-      write(unit,"(ES23.15,A)")       dt, " =    dt: dt of the last iteraction (s)"
-      write(unit,"(I23,A)")         it-1, " =    it: final number of iteractions for time evolution"
-      write(unit,"(ES23.15,A)")     tcpu, " =  tcpu: cpu time (s)"
-      write(unit,"(ES23.15,A)")     Cdfi, " =  Cdfi: Pressure foredrag coefficient"
-      write(unit,"(ES23.15,A)")     Cdfv, " =  Cdfv: Viscous foredrag coefficient"
-      write(unit,"(ES23.15,A)") Cdfi+Cdfv, " =   Cdf: Foredrag coefficient"
-
-   end subroutine
-
-
+   !> \brief Write a field b
    subroutine write_field(nx, ny, unit, xp, yp, b)
       implicit none
       integer, intent(in) :: nx   ! Number of volumes in csi direction (real+fictitious)
@@ -676,6 +571,8 @@ contains
       write(unit,*)
    end subroutine write_field
 
+
+   !> \brief Write the main fields
    subroutine write_main_fields(nx, ny, sim_id, xp, yp, p, ro, T, u, v, M)
       implicit none
       integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
@@ -714,6 +611,7 @@ contains
       close(10)
 
    end subroutine write_main_fields
+
 
    !> \brief Prints the fields u, v, p and T on the boundaries.
    subroutine write_fields_on_boundaries( nx, ny, sim_id, xp, yp, u, v, p, T ) ! Output: none
@@ -823,6 +721,7 @@ contains
    end subroutine
 
 
+   !> \brief Post-process fields on boundaries
    subroutine post_processing_boundaries( nx, ny, x, y, xp, yp, u, v, p, T ) ! InOutput: last six entries
       implicit none
       integer, intent(in) :: nx   ! Number of volumes in csi direction (real+fictitious)
@@ -955,98 +854,4 @@ contains
 
    end subroutine post_processing_boundaries
 
-
-   !> \brief Finds all the occurences of str1 in file1, replaces them by str2 and save the results in file2
-   subroutine file_replace( file1, file2, str1, str2)
-      implicit none
-      character (len=*), intent(in) :: file1 !< Input file
-      character (len=*), intent(in) :: file2 !< Output file
-      character (len=*), intent(in) :: str1  !< Find
-      character (len=*), intent(in) :: str2  !< Replace
-
-      ! Auxiliary variables
-      integer :: io
-      character (len=1000) :: str
-
-      if ( file1 /= file2 ) then
-
-         open(10, file = file1)
-         open(11, file = file2)
-
-         do
-
-            read(10,"(A)",iostat=io) str
-
-            if ( io /= 0 ) exit
-
-            call replace(str,str1,str2)
-
-            write(11,*) trim(adjustl(str))
-
-         end do
-
-         close(10)
-         close(11)
-
-      else
-
-         open(10, file = file1)
-         open(11, file = trim(adjustl(file2))//".tmp")
-
-         do
-
-            read(10,"(A)",iostat=io) str
-
-            if ( io /= 0 ) exit
-
-            call replace(str,str1,str2)
-
-            write(11,*) trim(adjustl(str))
-
-         end do
-
-         close(10)
-         close(11)
-
-         call rename( trim(adjustl(file2))//".tmp", file1 )
-
-      end if
-
-   end subroutine file_replace
-
-   !> \brief Finds all the occurrences of str2 in str1 and replaces them by str3
-   subroutine replace(str1, str2, str3)
-      implicit none
-      character (len=*), intent(inout) :: str1 !< Original string
-      character (len=*), intent(in)    :: str2 !< Find
-      character (len=*), intent(in)    :: str3 !< Replace
-
-      ! Auxiliary variables
-
-      integer :: idx !< First position where str2 was found
-      integer :: n1  !< Length of str1
-      integer :: n2  !< Length of str2
-
-      n1 = len(str1)
-
-      n2 = len(str2)
-
-      do
-
-         idx = index(str1,str2)
-
-         if ( idx /= 0 ) then
-
-            str1 = str1(1:idx-1) // str3 // str1(idx+n2:n1)
-
-         else
-
-            exit
-
-         end if
-
-      end do
-
-   end subroutine replace
-
-end module postp
+end module

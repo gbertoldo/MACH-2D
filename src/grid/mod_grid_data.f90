@@ -22,12 +22,7 @@ module mod_grid_data
    real(8) :: awf   !< Area weighting factor
    real(8) :: cbl   !< The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
    real(8) :: wbl   !< Boundary layer estimated width (m)
-   character(len=200) :: fgeom !< File of the geometric parameters
-
    real(8), allocatable, dimension(:) :: xf  !< coord. at the northeast corner of the volume P of the finest grid
    real(8), allocatable, dimension(:) :: yf  !< coord. at the northeast corner of the volume P of the finest grid
-
-   real(8) :: lr   ! length of the rocket
-   real(8) :: rb   ! base radius of the rocket
 
 end module

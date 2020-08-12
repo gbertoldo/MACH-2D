@@ -1,4 +1,8 @@
-module data
+!>
+!! \brief "mod_mach2d_data" contains data for running the main subroutine of
+!!        MACH-2D. It also provides some initialization procedures.
+!!
+module mod_mach2d_data
 
    use mod_class_ifile
    use mod_class_thermophysical_abstract
@@ -115,13 +119,6 @@ module data
    real(8), allocatable, dimension(:)   :: fbe  !< Face of boundary east (1 if an east boundary, 0 otherwise)
    real(8), allocatable, dimension(:)   :: fbn  !< Face of boundary north (1 if a north boundary, 0 otherwise)
 
-
-   !
-   ! GEOMETRIC PARAMETERS
-   !
-   integer :: iocs ! index of the matching point between the ogive and the cylinder
-   integer :: kfc  ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
-
    !
    ! FILE ID NUMBERS
    !
@@ -133,35 +130,20 @@ module data
    character (len=20)    :: date   ! System date
    character (len=20)    :: time   ! System time
    character (len = 100) :: sim_id ! Simulation identification
+   character (len = 100) :: msg(2) ! Message from subroutines to be printed in the terminal (1=title, 2=message)
 
    !
    ! GAS PROPERTIES AND VARIABLES
    !
    class(class_thermophysical_abstract), pointer :: thermomodel !< A pointer to the thermophysical model
-   integer :: ktm  !< Kind of thermophysical model ( THERMOPHYSICAL_CONSTANT, THERMOPHYSICAL_VARIABLE )
-   real(8) :: Rg   !< Gas constant (J/kg.K)
 
-   integer :: modvis ! Viscosity model (0=Euler, 1=NS)
-
-   real(8) ::  CPF !< Free stream Cp (J/kg.K)
-   real(8) ::  VLF !< Free stream viscosity (Pa.s)
-   real(8) ::  KPF !< Free stream thermal conductivity (W/m.K)
-   real(8) ::   GF !< Free stream GF = gamma = Cp / Cv
-   real(8) ::   PF !< Free stream pressure (Pa)
-   real(8) ::   TF !< Free stream temperature (K)
-   real(8) ::   HF !< Free stream total enthalpy (m2/s2)
-   real(8) ::   MF !< Free stream Mach number
-   real(8) ::   UF !< Free stream speed (m/s)
-   real(8) ::  PRF !< Free stream Prandtl number
-   real(8) ::  ROF !< Free stream density (kg/m3)
-   real(8) :: REFm !< Free stream Reynolds number per meter (1/m)
-
-   real(8) :: p_avg ! Average value of the pressure (Pa)
-
-   real(8) :: Cdfi ! Foredrag coefficient due pressure (dimensionless)
-   real(8) :: Cdfv ! Foredrag coefficient due viscosity (dimensionless)
-
-   real(8) :: Tsbc !< Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
+   integer :: ktm    !< Kind of thermophysical model ( THERMOPHYSICAL_CONSTANT, THERMOPHYSICAL_VARIABLE )
+   real(8) :: Rg     !< Gas constant (J/kg.K)
+   integer :: modvis !< Viscosity model (0=Euler, 1=NS)
+   real(8) :: Tref   !< Reference temperature (K)
+   real(8) :: Href   !< Reference total enthalpy (m2/s2)
+   real(8) :: Cpref  !< Reference Cp (J/kg.K)
+   real(8) :: p_avg  !< Average value of the pressure (Pa)
 
    real(8), allocatable, dimension(:) :: p    ! Pressure at center o volume P (Pa)
    real(8), allocatable, dimension(:) :: pa   ! Pressure of the previous time step (Pa)
@@ -267,11 +249,6 @@ contains
       call ifile%get_value(     wppd,     "wppd") ! Write post processed data (0=no, 1=yes, 2=yes-simplified)
       call ifile%get_value(     beta,     "beta") ! UDS/CDS mixing constant (0=UDS, 1=CDS)
       call ifile%get_value(   modvis,   "modvis") ! Viscosity model (0=Euler, 1=NS)
-      call ifile%get_value(      kfc,      "kfc") ! Kind of foredrag calculation ( 0 = over the whole forebody; 1 = over the ogive only)
-      call ifile%get_value(     Tsbc,     "Tsbc") ! Temperature on the south boundary (K) (if negative, adiabatic bc is applied)
-      call ifile%get_value(       PF,       "PF") ! Far field pressure (Pa)
-      call ifile%get_value(       TF,       "TF") ! Far field temperature (K)
-      call ifile%get_value(       MF,       "MF") ! Mach number of the free stream
 
       ! Initializing the grid module
       call grid_init(ifile)
@@ -315,13 +292,6 @@ contains
       write(fid,"(I23,' ....: ',A)")    wppd   , " wppd   - Write post processed data (0=no, 1=yes, 2=yes-simplified)"
       write(fid,"(ES23.16,' ....: ',A)") beta  , " beta   - UDS/CDS mixing constant (0=UDS, 1=CDS)"
       write(fid,"(I23,' ....: ',A)")    modvis , " modvis - Viscosity model (0=Euler, 1=NS)"
-      write(fid,"(I23,' ....: ',A)")    kfc    , " kfc    - Kind of foredrag calculation " &
-         // "( 0 = over the whole forebody; 1 = over the ogive only)"
-      write(fid,"(ES23.16,' ....: ',A)") Tsbc  , " Tsbc   - Temperature on the"&
-         // " south boundary (K) (if negative, adiabatic bc is applied)"
-      write(fid,"(ES23.16,' ....: ',A)") PF    , " PF     - Far field pressure (Pa)"
-      write(fid,"(ES23.16,' ....: ',A)") TF    , " TF     - Far field temperature (K)"
-      write(fid,"(ES23.16,' ....: ',A)") MF    , " MF     - Mach number of the free stream"
       write(fid,*)
 
    end subroutine write_parameters
@@ -383,6 +353,10 @@ contains
       ! Openning listing file
 
       open(lid, file = "./mach2d_output/mach2d_" // trim(adjustl(sim_id)) // ".txt")
+
+      ! Openning file of residuals
+      open(rid, file = './mach2d_output/mach2d_' // trim(adjustl(sim_id)) // '_residual.dat' )
+
 
       write(lid,*)
       write(lid,*) "LISTING FILE OF MACH2D"
@@ -565,4 +539,4 @@ contains
 
    end subroutine date_time
 
-end module data
+end module

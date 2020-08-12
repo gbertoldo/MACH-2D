@@ -8,7 +8,7 @@ module mod_grid
    use mod_class_ifile
    use mod_grid_data
    use mod_grid_procedures
-   use user
+   use mod_extflow
 
    implicit none
 
@@ -30,7 +30,6 @@ contains
       call ifile%get_value(      nyi,    "nyi-2") ! Number of real volumes in the eta direction of the coarsest grid
       call ifile%get_value(      nmf,      "nmf") ! Number of the finest mesh  (1<=nmf)
       call ifile%get_value(      nmd,      "nmd") ! Number of the desired mesh (1<=nmd<=nmf)
-      call ifile%get_value(    fgeom,    "fgeom") ! File of the geometric parameters
       call ifile%get_value(       kg,       "kg") ! Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
       call ifile%get_value(      avi,      "avi") ! Initial value of the artificial viscosity (only for kg=5)
       call ifile%get_value(      avf,      "avf") ! Final value of the artificial viscosity (only for kg=5)
@@ -69,13 +68,12 @@ contains
 
 
    !> \brief Creates the grid and related metrics
-   subroutine grid_create(unt, coord, REFm                            & ! Input
+   subroutine grid_create(unt, coord                                  & ! Input
          ,  x, y, xp, yp, xe, ye, xen, yen, xk, yk, xke, yke, Jp      & ! Output
          ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp  ) ! Output
       implicit none
       integer,               intent(in)  :: unt    !< Unit where the input parameters will be printed
       integer,               intent(in)  :: coord  !< Coordinate system ( 1=cylindrical, 0 = cartesian)
-      real(8),               intent(in)  :: REFm   !< Free stream Reynolds number per meter (1/m)
       real(8), dimension(:), intent(out) :: x      !<
       real(8), dimension(:), intent(out) :: y      !<
       real(8), dimension(:), intent(out) :: xp     !< Coord. x of the centroid of volume P
@@ -103,11 +101,11 @@ contains
       ! Getting the finest grid
 
       ! Generates the grid north and south boundary
-      call get_grid_boundary(nxf, nyf, unt, fgeom, lr, rb, xf, yf) ! Output: last four
+      call extflow_grid_boundary(nxf, nyf, unt, xf, yf) ! Output: last four
 
       ! Estimates the boundary layer width and the width of the volume
       ! closer to the wall
-      call get_boundary_layer_width_estimate(lr, REFm, cbl, wbl, a1) ! Output: last two
+      call extflow_boundary_layer(cbl, wbl, a1) ! Output: last two
 
       ! Generates the grid according to kg option
       call set_grid(kg, nxf, nyf, a1, avi, avf, awf, xf, yf) ! Last 2 are inoutput
