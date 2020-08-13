@@ -99,23 +99,6 @@ module mod_mach2d_data
    real(8), allocatable, dimension(:,:) :: at ! Coefficients of the linear system for T
    real(8), allocatable, dimension(:,:) :: ap ! Coefficients of the linear system for pl
 
-   real(8), allocatable, dimension(:,:) :: a9bn !< Matrix with the coefficients of the numerical scheme for the north boundary
-   real(8), allocatable, dimension(:,:) :: a9bs !< Matrix with the coefficients of the numerical scheme for the south boundary
-   real(8), allocatable, dimension(:,:) :: a9be !< Matrix with the coefficients of the numerical scheme for the east boundary
-   real(8), allocatable, dimension(:,:) :: a9bw !< Matrix with the coefficients of the numerical scheme for the west boundary
-   real(8), allocatable, dimension(:)   :: b9bn !< Vector with the source of the numerical scheme for the north boundary
-   real(8), allocatable, dimension(:)   :: b9bs !< Vector with the source of the numerical scheme for the south boundary
-   real(8), allocatable, dimension(:)   :: b9be !< Vector with the source of the numerical scheme for the east boundary
-   real(8), allocatable, dimension(:)   :: b9bw !< Vector with the source of the numerical scheme for the west boundary
-
-   real(8), allocatable, dimension(:,:) :: a5bn !< Matrix with the coefficients of the numerical scheme for the north boundary
-   real(8), allocatable, dimension(:,:) :: a5bs !< Matrix with the coefficients of the numerical scheme for the south boundary
-   real(8), allocatable, dimension(:,:) :: a5be !< Matrix with the coefficients of the numerical scheme for the east boundary
-   real(8), allocatable, dimension(:,:) :: a5bw !< Matrix with the coefficients of the numerical scheme for the west boundary
-   real(8), allocatable, dimension(:)   :: b5bn !< Vector with the source of the numerical scheme for the north boundary
-   real(8), allocatable, dimension(:)   :: b5bs !< Vector with the source of the numerical scheme for the south boundary
-   real(8), allocatable, dimension(:)   :: b5be !< Vector with the source of the numerical scheme for the east boundary
-   real(8), allocatable, dimension(:)   :: b5bw !< Vector with the source of the numerical scheme for the west boundary
    real(8), allocatable, dimension(:)   :: fbe  !< Face of boundary east (1 if an east boundary, 0 otherwise)
    real(8), allocatable, dimension(:)   :: fbn  !< Face of boundary north (1 if a north boundary, 0 otherwise)
 
@@ -181,36 +164,10 @@ module mod_mach2d_data
    real(8), allocatable, dimension(:) :: una  ! un of the previous time step
    real(8), allocatable, dimension(:) :: vna  ! vn of the previous time step
 
-   real(8), allocatable, dimension(:) :: ube !< u over the faces of the east boundary (m/s)
-   real(8), allocatable, dimension(:) :: ubw !< u over the faces of the west boundary (m/s)
-   real(8), allocatable, dimension(:) :: ubn !< u over the faces of the north boundary (m/s)
-   real(8), allocatable, dimension(:) :: ubs !< u over the faces of the south boundary (m/s)
-
-   real(8), allocatable, dimension(:) :: vbe !< v over the faces of the east boundary (m/s)
-   real(8), allocatable, dimension(:) :: vbw !< v over the faces of the west boundary (m/s)
-   real(8), allocatable, dimension(:) :: vbn !< v over the faces of the north boundary (m/s)
-   real(8), allocatable, dimension(:) :: vbs !< v over the faces of the south boundary (m/s)
-
    real(8), allocatable, dimension(:) :: Tbe !< T over the faces of the east boundary (K)
    real(8), allocatable, dimension(:) :: Tbw !< T over the faces of the west boundary (K)
    real(8), allocatable, dimension(:) :: Tbn !< T over the faces of the north boundary (K)
    real(8), allocatable, dimension(:) :: Tbs !< T over the faces of the south boundary (K)
-
-   real(8), allocatable, dimension(:) :: pbe !< p over the faces of the east boundary (Pa)
-   real(8), allocatable, dimension(:) :: pbw !< p over the faces of the west boundary (Pa)
-   real(8), allocatable, dimension(:) :: pbn !< p over the faces of the north boundary (Pa)
-   real(8), allocatable, dimension(:) :: pbs !< p over the faces of the south boundary (Pa)
-
-
-   real(8), allocatable, dimension(:) :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Ucbw !< Uc over the faces of the west  boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Ucbn !< Uc over the faces of the north boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Ucbs !< Uc over the faces of the south boundary (m2/s)
-
-   real(8), allocatable, dimension(:) :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Vcbw !< Vc over the faces of the west  boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Vcbn !< Vc over the faces of the north boundary (m2/s)
-   real(8), allocatable, dimension(:) :: Vcbs !< Vc over the faces of the south boundary (m2/s)
 
 contains
 
@@ -315,30 +272,11 @@ contains
       ,          Ta(nxy),       bt(nxy),       pa(nxy),         g(nxy) )
 
 
-      allocate( ube(ny), ubw(ny), ubn(nx), ubs(nx) )
-      allocate( vbe(ny), vbw(ny), vbn(nx), vbs(nx) )
       allocate( Tbe(ny), Tbw(ny), Tbn(nx), Tbs(nx) )
-      allocate( pbe(ny), pbw(ny), pbn(nx), pbs(nx) )
-
-
-      allocate( Ucbe (ny), Ucbw (ny), Ucbn (nx), Ucbs (nx) )
-      allocate( Vcbe (ny), Vcbw (ny), Vcbn (nx), Vcbs (nx) )
-
-
-      allocate( a9bn(nx,9), a9bs(nx,9), a9be(ny,9), a9bw(ny,9) )
-
-      allocate( b9bn(nx), b9bs(nx), b9be(ny), b9bw(ny) )
-
-
-      allocate( a5bn(nx,5), a5bs(nx,5), a5be(ny,5), a5bw(ny,5) )
-
-      allocate( b5bn(nx), b5bs(nx), b5be(ny), b5bw(ny) )
-
 
       allocate( au(nxy,9), av(nxy,9), at(nxy,9), ap(nxy,5) )
 
       allocate( fbe(nxy), fbn(nxy) )
-
 
    end subroutine allocate_variables
 
@@ -442,35 +380,10 @@ contains
       una = 0.d0
       vna = 0.d0
 
-      ube = 0.d0
-      ubw = 0.d0
-      ubn = 0.d0
-      ubs = 0.d0
-
-      vbe = 0.d0
-      vbw = 0.d0
-      vbn = 0.d0
-      vbs = 0.d0
-
       Tbe = 0.d0
       Tbw = 0.d0
       Tbn = 0.d0
       Tbs = 0.d0
-
-      pbe = 0.d0
-      pbw = 0.d0
-      pbn = 0.d0
-      pbs = 0.d0
-
-      Ucbe = 0.d0
-      Ucbw = 0.d0
-      Ucbn = 0.d0
-      Ucbs = 0.d0
-
-      Vcbe = 0.d0
-      Vcbw = 0.d0
-      Vcbn = 0.d0
-      Vcbs = 0.d0
 
       ap = 0.d0
       bp = 0.d0
@@ -480,27 +393,6 @@ contains
       Ta = 0.d0
       at = 0.d0
       bt = 0.d0
-
-      a9bn = 0.d0
-      a9bs = 0.d0
-      a9be = 0.d0
-      a9bw = 0.d0
-
-      b9bn = 0.d0
-      b9bs = 0.d0
-      b9be = 0.d0
-      b9bw = 0.d0
-
-
-      a5bn = 0.d0
-      a5bs = 0.d0
-      a5be = 0.d0
-      a5bw = 0.d0
-
-      b5bn = 0.d0
-      b5bs = 0.d0
-      b5be = 0.d0
-      b5bw = 0.d0
 
       fbe = 0.d0
       fbn = 0.d0

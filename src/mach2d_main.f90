@@ -1,6 +1,6 @@
 !>
 !! \brief      MACH-2D
-!!                 Version:
+!!                 Version: 5.9.0
 !!             Last update: 12/08/2020 by Guilherme Bertoldo
 !!
 program main
@@ -48,7 +48,7 @@ program main
    call extflow_initial_conditions(nx, ny, itemax, modvis, Rg, xe, ye & ! Input
       ,                               xk, yk, xke, yke, alphae, betae & ! Input
       ,                      p, T, ro, roe, ron, u, v, ue, ve, un, vn & ! Output
-      ,                      Uce, Vcn, Ucbe, Vcbe, Tbn, Tbs, Tbe, Tbw ) ! Output
+      ,                                  Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! Output
 
 
    ! Initializes the vectors with specific heat Cp, viscosity mu
@@ -143,11 +143,6 @@ program main
          norm = 0.d0
 
 
-         ! Calculates the contravariant velocities over the east boundary
-         call extflow_get_Ucbe_Vcbe(nx, ny, xe, ye, xke, yke, u, v, Ucbe, Vcbe) ! Output: last two
-
-
-
          ! Coefficients of the linear system for u (real volumes)
          call get_u_coefficients( nx, ny, modvis, dt, rp, re, rn, Jp, Je, Jn &
             ,                           ye, yk, alphae, betae, betan, gamman &
@@ -162,22 +157,8 @@ program main
             ,                   Uce, Vcn, ua, u, v, cup, sup, bu ) ! The last 3 are output
 
 
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
-         call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae & ! Intput
-            ,                                      u, v, Ucbe, Vcbe & ! Intput
-            ,                                a9bn, a9bs, a9be, a9bw & ! Output
-            ,                                b9bn, b9bs, b9be, b9bw ) ! Output
-
-         ! ========================================================================
-
-
-         ! Transfers the numerical scheme of the boundary conditions to the linear
-         ! system coefficients and source
-         call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            ,                                            b9be, b9bw, au, bu ) ! Output: last two
+         call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae, u, v & ! Intput
+            ,                                                      au, bu ) ! Output
 
 
          ! Coefficients of the linear system for v (real volumes)
@@ -193,22 +174,7 @@ program main
             ,                          Uce, Vcn, va, u, v, cvp, svp, bv ) ! Last 3 are output
 
 
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
-         call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe & ! Intput
-            ,                                   a9bn, a9bs, a9be, a9bw & ! Output
-            ,                                   b9bn, b9bs, b9be, b9bw ) ! Output
-
-         ! ========================================================================
-
-
-         ! Transfers the numerical scheme of the boundary conditions to the linear
-         ! system coefficients and source
-         call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            , b9be, b9bw, av, bv) ! Output: last two
-
+         call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, av, bv ) ! Output: last two
 
 
          ! Calculates SIMPLEC coefficients at the internal real faces
@@ -259,19 +225,9 @@ program main
             call get_p_coefficients(nx, ny, dt, rp, re, rn, Jp, Uce, Vcn &
                ,                                 roe, ron, g, de, dn, ap ) ! Output: last one
 
-            ! ========================================================================
-
-            !                      USER DEPENDENT SUBROUTINE
 
             ! Defines the numerical scheme for the boundary conditions of pl
-            call extflow_set_bcpl(nx, ny, a5bn, a5bs, a5be, a5bw, b5bn, b5bs, b5be, b5bw) ! Output: last eight
-
-            ! ========================================================================
-
-            ! Transfers the numerical scheme of the boundary conditions to the linear
-            ! system coefficients and source
-            call get_bc_transfer_5d(nx, ny, a5bn, a5bs, a5be, a5bw, b5bn, b5bs &
-               ,                                            b5be, b5bw, ap, bp ) ! Output: last two
+            call extflow_set_bcpl(nx, ny, ap, bp) ! Output: last eight
 
 
             ! Calculates the source of the linear system of the pressure correction
@@ -311,20 +267,9 @@ program main
          call get_pressure_correction_with_pl( nx, ny, pl, p) ! InOutput: last two
 
 
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
-         ! Defines the numerical scheme for the boundary conditions of ro
-         call extflow_set_bcro(nx, ny, alphae, betae, betan, gamman, Ucbe, Vcbe & ! Input
-            ,                    a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
-
-         ! ========================================================================
-
-         ! Extrapolates ro from the real volumes to the fictitious ones according to the boundary conditions
-         call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            , b9be, b9bw, ro) ! InOutput: last one
-
+         ! Extrapolates ro to fictitious volumes in accordance to bc
+         call extflow_extrapolate_ro_to_fictitious(nx, ny, itemax, alphae &
+            ,                                    betae, betan, gamman, ro ) ! InOutput: last one
 
 
          ! Calculates the values of p at fictitious volumes
@@ -338,36 +283,9 @@ program main
             ,                                              u, v ) ! Input and Output
 
 
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
-         call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae & ! Intput
-            ,                                      u, v, Ucbe, Vcbe & ! Intput
-            ,                                a9bn, a9bs, a9be, a9bw & ! Output
-            ,                                b9bn, b9bs, b9be, b9bw ) ! Output
-
-         ! ========================================================================
-
-
-         ! Extrapolates u from the real volumes to the fictitious ones according to the boundary conditions
-         call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            , b9be, b9bw, u) ! InOutput: last one
-
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
-         call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe & ! Intput
-            ,                                   a9bn, a9bs, a9be, a9bw & ! Output
-            ,                                   b9bn, b9bs, b9be, b9bw ) ! Output
-
-         ! ========================================================================
-
-
-         ! Extrapolates v from the real volumes to the fictitious ones according to the boundary conditions
-         call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            , b9be, b9bw, v) ! InOutput: last one
+         ! Extrapolates u and v to fictitious volumes in accordance to bc
+         call extflow_extrapolate_u_v_to_fictitious(nx, ny, modvis, itemax &
+            ,                                  xk, yk, alphae, betae, u, v ) ! InOutput: last two
 
 
       end do
@@ -397,23 +315,8 @@ program main
          ,                  u, v, ue, ve, un, vn, ua, va, T, Ta, fbe, fbn, at, bt ) ! Last 2 are output
 
 
-         ! ========================================================================
-
-         !                      USER DEPENDENT SUBROUTINE
-
          ! Defines the numerical scheme for the boundary conditions of T
-         call extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, Ucbe, Vcbe & ! Input
-            ,                   a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
-
-
-         ! ========================================================================
-
-
-         ! Transfers the numerical scheme of the boundary conditions to the linear
-         ! system coefficients and source
-         call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
-            , b9be, b9bw, at, bt) ! Output: last two
-
+         call extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, at, bt ) ! Output: last two
 
          ! Solves the linear system for T
          call solver9d%solve(at, bt, T)

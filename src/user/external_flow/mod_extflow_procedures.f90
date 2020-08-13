@@ -189,7 +189,7 @@ contains
    ! Guess the initial conditions
    subroutine get_initial_conditions( nx, ny, itemax, modvis, PF, TF, Rg, GF &
          , MF, UF, xe, ye, xk, yk, xke, yke, alphae, betae, p, T, ro, roe, ron, u, v   &
-         , ue, ve, un, vn, Uce, Vcn, Ucbe, Vcbe, Tbn, Tbs, Tbe, Tbw ) ! UF and last 19 are output
+         , ue, ve, un, vn, Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! UF and last 17 are output
 
       implicit none
       integer, intent(in)  :: nx  ! Number of volumes in csi direction (real+fictitious)
@@ -223,8 +223,6 @@ contains
       real(8), dimension(nx*ny), intent(out) :: vn     ! Cartesian velocity v at center of north face (m/s)
       real(8), dimension(nx*ny), intent(out) :: Uce    ! Contravariant velocity U at east face (m2/s)
       real(8), dimension(nx*ny), intent(out) :: Vcn    ! Contravariant velocity V at north face (m2/s)
-      real(8), dimension(ny),    intent(out) :: Ucbe   !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(out) :: Vcbe   !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx),    intent(out) :: Tbn    !< Temperature over the north boundary (K)
       real(8), dimension(nx),    intent(out) :: Tbs    !< Temperature over the south boundary (K)
       real(8), dimension(ny),    intent(out) :: Tbe    !< Temperature over the  east boundary (K)
@@ -272,15 +270,12 @@ contains
       Tbw = TF
 
 
-      ! Calculates the contravariant velocities over the east boundary
-      call get_Ucbe_Vcbe(nx, ny, xe, ye, xke, yke, u, v, Ucbe, Vcbe) ! Output: last two
-
       ! ========================================================================
 
       !                      USER DEPENDENT SUBROUTINE
 
       call get_bc_scheme_u(nx, ny, modvis, UF, xk, yk, alphae, betae, u, v &
-         , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
 
       ! ========================================================================
 
@@ -294,7 +289,7 @@ contains
 
       !                      USER DEPENDENT SUBROUTINE
 
-      call get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe &
+      call get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v &
          , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
 
       ! ========================================================================
@@ -406,7 +401,7 @@ contains
 
    !> \brief Defines the numerical scheme of the boundary conditions for u
    subroutine get_bc_scheme_u(nx, ny, modvis, UF, xk, yk, alphae, betae, u, v &
-      , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+      ,                         a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
       implicit none
       integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
@@ -418,8 +413,6 @@ contains
       real(8), dimension(nx*ny), intent(in)  :: betae  !< (metric) beta  at the center of east face of volume P
       real(8), dimension(nx*ny), intent(in)  :: u    !< x cartesian velocity (m/s)
       real(8), dimension(nx*ny), intent(in)  :: v    !< y cartesian velocity (m/s)
-      real(8), dimension(ny),    intent(in)  :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in)  :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx,9),  intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
       real(8), dimension(nx,9),  intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
       real(8), dimension(ny,9),  intent(out) :: a9be !< Coefficients of the discretization for the east boundary
@@ -485,8 +478,8 @@ contains
 
 
    !> \brief Defines the numerical scheme of the boundary conditions for v
-   subroutine get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe &
-      , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+   subroutine get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v &
+      ,      a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
       implicit none
       integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
@@ -495,8 +488,6 @@ contains
       real(8), dimension(nx*ny), intent(in)  :: yk   !< y_csi at face north of volume P (m)
       real(8), dimension(nx*ny), intent(in)  :: u    !< x cartesian velocity (m/s)
       real(8), dimension(nx*ny), intent(in)  :: v    !< y cartesian velocity (m/s)
-      real(8), dimension(ny),    intent(in)  :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in)  :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx,9),  intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
       real(8), dimension(nx,9),  intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
       real(8), dimension(ny,9),  intent(out) :: a9be !< Coefficients of the discretization for the east boundary
@@ -567,7 +558,7 @@ contains
 
    !> \brief Defines the numerical scheme for the boundary conditions of ro
    subroutine get_bc_scheme_ro(nx, ny, ROF, alphae, betae, betan, gamman &
-         , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         ,                 a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
       implicit none
       integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
@@ -576,8 +567,6 @@ contains
       real(8), dimension(nx*ny), intent(in) :: betae  !< (metric) beta  at the center of east face of volume P
       real(8), dimension(nx*ny), intent(in) :: betan  !< (metric) beta  at the center of north face of volume P
       real(8), dimension(nx*ny), intent(in) :: gamman !< (metric) gamma at the center of north face of volume P
-      real(8), dimension(ny),   intent(in)  :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),   intent(in)  :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx,9), intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
       real(8), dimension(nx,9), intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
       real(8), dimension(ny,9), intent(out) :: a9be !< Coefficients of the discretization for the east boundary
@@ -636,7 +625,7 @@ contains
 
    !> \brief Defines the numerical scheme for the boundary conditions of T
    subroutine get_bc_scheme_T(nx, ny, TF, Tsbc, alphae, betae, betan, gamman &
-         , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         ,                   a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
       implicit none
       integer, intent(in) :: nx   !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny   !< Number of volumes in eta direction (real+fictitious)
@@ -646,8 +635,6 @@ contains
       real(8), dimension(nx*ny), intent(in) :: betae  !< (metric) beta  at the center of east face of volume P
       real(8), dimension(nx*ny), intent(in) :: betan  !< (metric) beta  at the center of north face of volume P
       real(8), dimension(nx*ny), intent(in) :: gamman !< (metric) gamma at the center of north face of volume P
-      real(8), dimension(ny),    intent(in) :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in) :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx,9), intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
       real(8), dimension(nx,9), intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
       real(8), dimension(ny,9), intent(out) :: a9be !< Coefficients of the discretization for the east boundary

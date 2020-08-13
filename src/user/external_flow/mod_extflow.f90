@@ -12,9 +12,7 @@ module mod_extflow
    use mod_extflow_procedures                                                         &
       ,    extflow_boundary_simplec              => get_boundary_simplec_coefficients &
       ,    extflow_velocities_at_boundary_faces  => get_velocities_at_boundary_faces  &
-      ,    extflow_set_bcpl                      => get_bc_scheme_pl                  &
-      ,    extflow_p_extrapolation_to_fictitious => get_p_extrapolation_to_fictitious &
-      ,    extflow_get_Ucbe_Vcbe                 => get_Ucbe_Vcbe
+      ,    extflow_p_extrapolation_to_fictitious => get_p_extrapolation_to_fictitious
 
    implicit none
 
@@ -22,20 +20,21 @@ module mod_extflow
    private
 
    ! Public procedures
-   public :: extflow_init                          &
-      ,      extflow_grid_boundary                 &
-      ,      extflow_boundary_layer                &
-      ,      extflow_initial_conditions            &
-      ,      extflow_set_bcu                       &
-      ,      extflow_set_bcv                       &
-      ,      extflow_set_bcpl                      &
-      ,      extflow_set_bcro                      &
-      ,      extflow_set_bcT                       &
-      ,      extflow_boundary_simplec              &
-      ,      extflow_velocities_at_boundary_faces  &
-      ,      extflow_p_extrapolation_to_fictitious &
-      ,      extflow_calc_main_variables           &
-      ,      extflow_get_Ucbe_Vcbe
+   public :: extflow_init                           &
+      ,      extflow_grid_boundary                  &
+      ,      extflow_boundary_layer                 &
+      ,      extflow_initial_conditions             &
+      ,      extflow_set_bcu                        &
+      ,      extflow_set_bcv                        &
+      ,      extflow_set_bcpl                       &
+      ,      extflow_set_bcro                       &
+      ,      extflow_set_bcT                        &
+      ,      extflow_boundary_simplec               &
+      ,      extflow_velocities_at_boundary_faces   &
+      ,      extflow_extrapolate_u_v_to_fictitious  &
+      ,      extflow_extrapolate_ro_to_fictitious   &
+      ,      extflow_p_extrapolation_to_fictitious  &
+      ,      extflow_calc_main_variables
 
 contains
 
@@ -102,7 +101,7 @@ contains
    subroutine extflow_initial_conditions(nx, ny, itemax, modvis, Rg, xe, ye & ! Input
       ,                                  xk, yk, xke, yke, alphae, betae    & ! Input
       ,                            p, T, ro, roe, ron, u, v, ue, ve, un, vn & ! Output
-      ,                            Uce, Vcn, Ucbe, Vcbe, Tbn, Tbs, Tbe, Tbw ) ! Output
+      ,                                        Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! Output
       implicit none
       integer, intent(in)  :: nx     !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in)  :: ny     !< Number of volumes in eta direction (real+fictitious)
@@ -130,8 +129,6 @@ contains
       real(8), dimension(nx*ny), intent(out) :: vn     !< Cartesian velocity v at center of north face (m/s)
       real(8), dimension(nx*ny), intent(out) :: Uce    !< Contravariant velocity U at east face (m2/s)
       real(8), dimension(nx*ny), intent(out) :: Vcn    !< Contravariant velocity V at north face (m2/s)
-      real(8), dimension(ny),    intent(out) :: Ucbe   !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(out) :: Vcbe   !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx),    intent(out) :: Tbn    !< Temperature over the north boundary (K)
       real(8), dimension(nx),    intent(out) :: Tbs    !< Temperature over the south boundary (K)
       real(8), dimension(ny),    intent(out) :: Tbe    !< Temperature over the  east boundary (K)
@@ -139,7 +136,7 @@ contains
 
        call get_initial_conditions( nx, ny, itemax, modvis, PF, TF, Rg, GF, MF, UF &
       , xe, ye, xk, yk, xke, yke, alphae, betae, p, T, ro, roe, ron, u, v, ue  &
-      , ve, un, vn, Uce, Vcn, Ucbe, Vcbe, Tbn, Tbs, Tbe, Tbw ) ! UF and last 19 are output
+      , ve, un, vn, Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! UF and last 19 are output
       ! checked
 
       ! Selects the portion of the forebody where the drag will be calculated
@@ -165,69 +162,105 @@ contains
 
 
    !> \brief Sets boundary condition for u
-   subroutine extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae & ! Intput
-      ,                                            u, v, Ucbe, Vcbe & ! Intput
-      ,                                      a9bn, a9bs, a9be, a9bw & ! Output
-      ,                                      b9bn, b9bs, b9be, b9bw ) ! Output
+   subroutine extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae, u, v & ! Intput
+      ,                                                            au, bu ) ! Output
       implicit none
-      integer,                   intent(in)  :: nx     !< Number of volumes in csi direction (real+fictitious)
-      integer,                   intent(in)  :: ny     !< Number of volumes in eta direction (real+fictitious)
-      integer,                   intent(in)  :: modvis !< Viscosity model (0=Euler, 1=NS)
-      real(8), dimension(nx*ny), intent(in)  :: xk     !< x_csi at face north of volume P (m)
-      real(8), dimension(nx*ny), intent(in)  :: yk     !< y_csi at face north of volume P (m)
-      real(8), dimension(nx*ny), intent(in)  :: alphae !< (metric) alpha at the center of east face of volume P
-      real(8), dimension(nx*ny), intent(in)  :: betae  !< (metric) beta  at the center of east face of volume P
-      real(8), dimension(nx*ny), intent(in)  :: u      !< x cartesian velocity (m/s)
-      real(8), dimension(nx*ny), intent(in)  :: v      !< y cartesian velocity (m/s)
-      real(8), dimension(ny),    intent(in)  :: Ucbe   !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in)  :: Vcbe   !< Vc over the faces of the east  boundary (m2/s)
-      real(8), dimension(nx,9),  intent(out) :: a9bn   !< Coefficients of the discretization for the north boundary
-      real(8), dimension(nx,9),  intent(out) :: a9bs   !< Coefficients of the discretization for the south boundary
-      real(8), dimension(ny,9),  intent(out) :: a9be   !< Coefficients of the discretization for the east boundary
-      real(8), dimension(ny,9),  intent(out) :: a9bw   !< Coefficients of the discretization for the west boundary
-      real(8), dimension(nx),    intent(out) :: b9bn   !< Source of the discretization for the north boundary
-      real(8), dimension(nx),    intent(out) :: b9bs   !< Source of the discretization for the south boundar
-      real(8), dimension(ny),    intent(out) :: b9be   !< Source of the discretization for the east boundary
-      real(8), dimension(ny),    intent(out) :: b9bw   !< Source of the discretization for the west boundary
+      integer,                     intent(in)  :: nx     !< Number of volumes in csi direction (real+fictitious)
+      integer,                     intent(in)  :: ny     !< Number of volumes in eta direction (real+fictitious)
+      integer,                     intent(in)  :: modvis !< Viscosity model (0=Euler, 1=NS)
+      real(8), dimension(nx*ny),   intent(in)  :: xk     !< x_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)  :: yk     !< y_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)  :: alphae !< (metric) alpha at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(in)  :: betae  !< (metric) beta  at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(in)  :: u      !< x cartesian velocity (m/s)
+      real(8), dimension(nx*ny),   intent(in)  :: v      !< y cartesian velocity (m/s)
+      real(8), dimension(nx*ny,9), intent(out) :: au     !< Coefficients of the discretization for all volumes
+      real(8), dimension(nx*ny),   intent(out) :: bu     !< Source of the discretization for all volumes
+
+      real(8), dimension(nx,9) :: a9bn   !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,9) :: a9bs   !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,9) :: a9be   !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,9) :: a9bw   !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b9bn   !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b9bs   !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b9be   !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b9bw   !< Source of the discretization for the west boundary
 
       call get_bc_scheme_u(nx, ny, modvis, UF, xk, yk, alphae, betae, u, v &
-         ,       Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         ,                  a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output: last eight
+
+      ! Transfers the numerical scheme of the boundary conditions to the linear
+      ! system coefficients and source
+      call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
+         ,                                            b9be, b9bw, au, bu ) ! Output: last two
 
    end subroutine
 
 
    !> \brief Sets boundary condition for v
-   subroutine extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe & ! Intput
-      ,                                         a9bn, a9bs, a9be, a9bw & ! Output
-      ,                                         b9bn, b9bs, b9be, b9bw ) ! Output
+   subroutine extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, av, bv ) ! Output
       implicit none
-      integer,                   intent(in)  :: nx     !< Number of volumes in csi direction (real+fictitious)
-      integer,                   intent(in)  :: ny     !< Number of volumes in eta direction (real+fictitious)
-      integer,                   intent(in)  :: modvis !< Viscosity model (0=Euler, 1=NS)
-      real(8), dimension(nx*ny), intent(in)  :: xk     !< x_csi at face north of volume P (m)
-      real(8), dimension(nx*ny), intent(in)  :: yk     !< y_csi at face north of volume P (m)
-      real(8), dimension(nx*ny), intent(in)  :: u      !< x cartesian velocity (m/s)
-      real(8), dimension(nx*ny), intent(in)  :: v      !< y cartesian velocity (m/s)
-      real(8), dimension(ny),    intent(in)  :: Ucbe   !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in)  :: Vcbe   !< Vc over the faces of the east  boundary (m2/s)
-      real(8), dimension(nx,9),  intent(out) :: a9bn   !< Coefficients of the discretization for the north boundary
-      real(8), dimension(nx,9),  intent(out) :: a9bs   !< Coefficients of the discretization for the south boundary
-      real(8), dimension(ny,9),  intent(out) :: a9be   !< Coefficients of the discretization for the east boundary
-      real(8), dimension(ny,9),  intent(out) :: a9bw   !< Coefficients of the discretization for the west boundary
-      real(8), dimension(nx),    intent(out) :: b9bn   !< Source of the discretization for the north boundary
-      real(8), dimension(nx),    intent(out) :: b9bs   !< Source of the discretization for the south boundar
-      real(8), dimension(ny),    intent(out) :: b9be   !< Source of the discretization for the east boundary
-      real(8), dimension(ny),    intent(out) :: b9bw   !< Source of the discretization for the west boundary
+      integer,                     intent(in)  :: nx     !< Number of volumes in csi direction (real+fictitious)
+      integer,                     intent(in)  :: ny     !< Number of volumes in eta direction (real+fictitious)
+      integer,                     intent(in)  :: modvis !< Viscosity model (0=Euler, 1=NS)
+      real(8), dimension(nx*ny),   intent(in)  :: xk     !< x_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)  :: yk     !< y_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)  :: u      !< x cartesian velocity (m/s)
+      real(8), dimension(nx*ny),   intent(in)  :: v      !< y cartesian velocity (m/s)
+      real(8), dimension(nx*ny,9), intent(out) :: av     !< Coefficients of the discretization for all volumes
+      real(8), dimension(nx*ny),   intent(out) :: bv     !< Source of the discretization for all volumes
 
-      call get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v, Ucbe, Vcbe &
-            , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+      real(8), dimension(nx,9) :: a9bn   !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,9) :: a9bs   !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,9) :: a9be   !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,9) :: a9bw   !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b9bn   !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b9bs   !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b9be   !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b9bw   !< Source of the discretization for the west boundary
+
+      call get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v   &
+         , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output: last eight
+
+      ! Transfers the numerical scheme of the boundary conditions to the linear
+      ! system coefficients and source
+      call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
+         , b9be, b9bw, av, bv) ! Output: last two
+
+   end subroutine
+
+
+   !> \brief Sets boundary conditions for pl
+   subroutine extflow_set_bcpl(nx, ny, ap, bp) ! Output: last two
+      implicit none
+      integer, intent(in) :: nx !< Number of volumes in csi direction (real+fictitious)
+      integer, intent(in) :: ny !< Number of volumes in eta direction (real+fictitious)
+      real(8), dimension(nx*ny,5), intent(out) :: ap   !< Coefficients of the discretization for all volumes
+      real(8), dimension(nx*ny),   intent(out) :: bp   !< Source of the discretization for all volumes
+
+      real(8), dimension(nx,5) :: a5bn !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,5) :: a5bs !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,5) :: a5be !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,5) :: a5bw !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b5bn !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b5bs !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b5be !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b5bw !< Source of the discretization for the west boundary
+
+      ! Defines the numerical scheme for the boundary conditions of pl
+      call get_bc_scheme_pl(nx, ny, a5bn, a5bs, a5be, a5bw, b5bn, b5bs, b5be, b5bw) ! Output: last eight
+
+      ! Transfers the numerical scheme of the boundary conditions to the linear
+      ! system coefficients and source
+      call get_bc_transfer_5d(nx, ny, a5bn, a5bs, a5be, a5bw, b5bn, b5bs &
+         ,                                            b5be, b5bw, ap, bp ) ! Output: last two
 
    end subroutine
 
 
    !> \brief Sets boundary condition for ro
-   subroutine extflow_set_bcro(nx, ny, alphae, betae, betan, gamman, Ucbe, Vcbe & ! Input
-         ,                       a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
+   subroutine extflow_set_bcro(nx, ny, alphae, betae, betan, gamman & ! Input
+         ,           a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
       implicit none
       integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
@@ -235,8 +268,6 @@ contains
       real(8), dimension(nx*ny), intent(in) :: betae  !< (metric) beta  at the center of east face of volume P
       real(8), dimension(nx*ny), intent(in) :: betan  !< (metric) beta  at the center of north face of volume P
       real(8), dimension(nx*ny), intent(in) :: gamman !< (metric) gamma at the center of north face of volume P
-      real(8), dimension(ny),   intent(in)  :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),   intent(in)  :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
       real(8), dimension(nx,9), intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
       real(8), dimension(nx,9), intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
       real(8), dimension(ny,9), intent(out) :: a9be !< Coefficients of the discretization for the east boundary
@@ -248,34 +279,39 @@ contains
 
       ! Defines the numerical scheme for the boundary conditions of ro
       call get_bc_scheme_ro(nx, ny, ROF, alphae, betae, betan, gamman &
-         , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         ,              a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
 
    end subroutine
 
 
    !> \brief Sets boundary condition for T
-   subroutine extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, Ucbe, Vcbe & ! Input
-         ,                      a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
+   subroutine extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, at, bt ) ! Output: last two
       implicit none
       integer, intent(in) :: nx   !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny   !< Number of volumes in eta direction (real+fictitious)
-      real(8), dimension(nx*ny), intent(in) :: alphae !< (metric) alpha at the center of east face of volume P
-      real(8), dimension(nx*ny), intent(in) :: betae  !< (metric) beta  at the center of east face of volume P
-      real(8), dimension(nx*ny), intent(in) :: betan  !< (metric) beta  at the center of north face of volume P
-      real(8), dimension(nx*ny), intent(in) :: gamman !< (metric) gamma at the center of north face of volume P
-      real(8), dimension(ny),    intent(in) :: Ucbe !< Uc over the faces of the east  boundary (m2/s)
-      real(8), dimension(ny),    intent(in) :: Vcbe !< Vc over the faces of the east  boundary (m2/s)
-      real(8), dimension(nx,9), intent(out) :: a9bn !< Coefficients of the discretization for the north boundary
-      real(8), dimension(nx,9), intent(out) :: a9bs !< Coefficients of the discretization for the south boundary
-      real(8), dimension(ny,9), intent(out) :: a9be !< Coefficients of the discretization for the east boundary
-      real(8), dimension(ny,9), intent(out) :: a9bw !< Coefficients of the discretization for the west boundary
-      real(8), dimension(nx),   intent(out) :: b9bn !< Source of the discretization for the north boundary
-      real(8), dimension(nx),   intent(out) :: b9bs !< Source of the discretization for the south boundar
-      real(8), dimension(ny),   intent(out) :: b9be !< Source of the discretization for the east boundary
-      real(8), dimension(ny),   intent(out) :: b9bw !< Source of the discretization for the west boundary
+      real(8), dimension(nx*ny),   intent(in)  :: alphae !< (metric) alpha at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(in)  :: betae  !< (metric) beta  at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(in)  :: betan  !< (metric) beta  at the center of north face of volume P
+      real(8), dimension(nx*ny),   intent(in)  :: gamman !< (metric) gamma at the center of north face of volume P
+      real(8), dimension(nx*ny,9), intent(out) :: at     !< Coefficients of the discretization for all volumes
+      real(8), dimension(nx*ny),   intent(out) :: bt     !< Source of the discretization for all volumes
+
+      real(8), dimension(nx,9) :: a9bn   !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,9) :: a9bs   !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,9) :: a9be   !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,9) :: a9bw   !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b9bn   !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b9bs   !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b9be   !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b9bw   !< Source of the discretization for the west boundary
 
       call get_bc_scheme_T(nx, ny, TF, Tsbc, alphae, betae, betan, gamman &
-            , Ucbe, Vcbe, a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+         ,                  a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw) ! Output: last eight
+
+      ! Transfers the numerical scheme of the boundary conditions to the linear
+      ! system coefficients and source
+      call get_bc_transfer_9d(nx, ny, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
+         , b9be, b9bw, at, bt) ! Output: last two
 
    end subroutine
 
@@ -318,5 +354,79 @@ contains
 
    end subroutine
 
+
+   !> \brief Extrapolates u and v to fictitious volumes in accordance to bc
+   subroutine extflow_extrapolate_u_v_to_fictitious(nx, ny, modvis, itemax &
+      ,                                       xk, yk, alphae, betae,  u, v ) ! InOutput: last two
+      implicit none
+      integer,                     intent(in)     :: nx     !< Number of volumes in csi direction (real+fictitious)
+      integer,                     intent(in)     :: ny     !< Number of volumes in eta direction (real+fictitious)
+      integer,                     intent(in)     :: modvis !< Viscosity model (0=Euler, 1=NS)
+      integer,                     intent(in)     :: itemax !< Number of iteractions for extrapolation to fictitious
+      real(8), dimension(nx*ny),   intent(in)     :: xk     !< x_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)     :: yk     !< y_csi at face north of volume P (m)
+      real(8), dimension(nx*ny),   intent(in)     :: alphae !< (metric) alpha at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(in)     :: betae  !< (metric) beta  at the center of east face of volume P
+      real(8), dimension(nx*ny),   intent(inout)  :: u      !< x cartesian velocity (m/s)
+      real(8), dimension(nx*ny),   intent(inout)  :: v      !< y cartesian velocity (m/s)
+
+      real(8), dimension(nx,9) :: a9bn   !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,9) :: a9bs   !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,9) :: a9be   !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,9) :: a9bw   !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b9bn   !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b9bs   !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b9be   !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b9bw   !< Source of the discretization for the west boundary
+
+      call get_bc_scheme_u(nx, ny, modvis, UF, xk, yk, alphae, betae, u, v &
+         ,                  a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output: last eight
+
+      ! Extrapolates u from the real volumes to the fictitious ones according to the boundary conditions
+      call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
+         , b9be, b9bw, u) ! InOutput: last one
+
+      call get_bc_scheme_v(nx, ny, modvis, xk, yk, u, v   &
+         , a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output: last eight
+
+      ! Extrapolates v from the real volumes to the fictitious ones according to the boundary conditions
+      call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw, b9bn, b9bs &
+         , b9be, b9bw, v) ! InOutput: last one
+
+   end subroutine
+
+
+   !> \brief Extrapolates ro to fictitious volumes in accordance to bc
+   subroutine extflow_extrapolate_ro_to_fictitious(nx, ny, itemax, alphae &
+      ,                                          betae, betan, gamman, ro ) ! InOutput: last one
+      implicit none
+      integer,                     intent(in)     :: nx     !< Number of volumes in csi direction (real+fictitious)
+      integer,                     intent(in)     :: ny     !< Number of volumes in eta direction (real+fictitious)
+      integer,                     intent(in)     :: itemax !< Number of iteractions for extrapolation to fictitious
+      real(8), dimension (nx*ny),  intent(in)     :: alphae ! (metric) Alpha at the center of east face of volume P
+      real(8), dimension (nx*ny),  intent(in)     :: betae  ! (metric) Beta  at the center of east face of volume P
+      real(8), dimension (nx*ny),  intent(in)     :: betan  ! (metric) Beta  at the center of north face of volume P
+      real(8), dimension (nx*ny),  intent(in)     :: gamman ! (metric) Gamma at the center of north face of volume P
+      real(8), dimension(nx*ny),   intent(inout)  :: ro     !< Absolute density at center of vol. P
+
+      real(8), dimension(nx,9) :: a9bn   !< Coefficients of the discretization for the north boundary
+      real(8), dimension(nx,9) :: a9bs   !< Coefficients of the discretization for the south boundary
+      real(8), dimension(ny,9) :: a9be   !< Coefficients of the discretization for the east boundary
+      real(8), dimension(ny,9) :: a9bw   !< Coefficients of the discretization for the west boundary
+      real(8), dimension(nx)   :: b9bn   !< Source of the discretization for the north boundary
+      real(8), dimension(nx)   :: b9bs   !< Source of the discretization for the south boundar
+      real(8), dimension(ny)   :: b9be   !< Source of the discretization for the east boundary
+      real(8), dimension(ny)   :: b9bw   !< Source of the discretization for the west boundary
+
+      ! Defines the numerical scheme for the boundary conditions of ro
+      call extflow_set_bcro(nx, ny, alphae, betae, betan, gamman & ! Input
+         ,        a9bn, a9bs, a9be, a9bw, b9bn, b9bs, b9be, b9bw ) ! Output
+
+
+      ! Extrapolates ro from the real volumes to the fictitious ones according to the boundary conditions
+      call get_bc_extrapolation_9d(nx, ny, itemax, a9bn, a9bs, a9be, a9bw &
+         ,                                     b9bn, b9bs, b9be, b9bw, ro ) ! InOutput: last one
+
+   end subroutine
 
 end module
