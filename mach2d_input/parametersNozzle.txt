@@ -33,7 +33,7 @@ GRID PARAMETERS
 ===============
                                20 & nxi-2  & Number of real volumes in the csi direction of the coarsest grid
                                10 & nyi-2  & Number of real volumes in the eta direction of the coarsest grid
-                                6 & nmf    & Number of the finest mesh  (1<=nmf)
+                                1 & nmf    & Number of the finest mesh  (1<=nmf)
                                 1 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
                                 1 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
                            1.0E00 & avi    & Initial value of the artificial viscosity (only for kg=5)

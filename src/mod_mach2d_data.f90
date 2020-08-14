@@ -25,6 +25,8 @@ module mod_mach2d_data
    integer :: nxy   ! nxy = nx * ny
    integer :: coord ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
 
+   type(type_gridpar) :: gridpar ! Grid parameters
+
    real(8), allocatable, dimension(:) :: x   ! coord. at the northeast corner of the volume P
    real(8), allocatable, dimension(:) :: y   ! coord. at the northeast corner of the volume P
    real(8), allocatable, dimension(:) :: xp  ! Coord. x of the centroid of volume P
@@ -219,10 +221,11 @@ contains
       call ifile%get_value(   modvis,   "modvis") ! Viscosity model (0=Euler, 1=NS)
 
       ! Initializing the grid module
-      call grid_init(ifile)
+      call grid_init(ifile, gridpar) ! Output: last one
 
       ! Calculating the number of volumes (real+fictitious) of the desired mesh
-      call grid_size( nx, ny)
+      nx = gridpar%nx
+      ny = gridpar%ny
 
       ! Number of volumes of the grid
       nxy = nx * ny

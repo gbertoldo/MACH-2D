@@ -15,8 +15,6 @@ program main
    use mod_field_operations
    use depp_interface
    use coefficients
-   use bc5d
-   use bc9d
    use mod_extflow
    use mod_extflow_postp
 
@@ -41,9 +39,9 @@ program main
 
 
    ! Creating the grid and calculating the metrics
-   call grid_create(lid, coord, kflow, iflow                          & ! Input
+   call grid_create(lid, coord, kflow, gridpar                          & ! Input
          ,  x, y, xp, yp, xe, ye, xen, yen, xk, yk, xke, yke, Jp      & ! Output
-         ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp  ) ! Output
+         ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp, iflow  ) ! Output
 
 
    ! Initialize the flags of boundary faces
@@ -60,7 +58,7 @@ program main
    else
       !> \brief Calculates initial conditions for internal flow
       call intflow_initial_conditions( nx, ny, modvis, beta & ! Input
-         ,           thermomodel, ye, yk, radius, rn, x, xp & ! Input
+         ,        thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
          ,                                            iflow & ! InOutput
          ,                     p, T, u, v, ue, un, Uce, Vcn & ! Output
          ,                             de, dn, ro, roe, ron ) ! Output

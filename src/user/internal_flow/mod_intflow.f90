@@ -7,12 +7,14 @@ module mod_intflow
    use mod_class_ifile
    use mod_class_thermophysical_abstract
    use mod_intflow_geometry
+   use mod_intflow_procedures
 
-   use user_internal_flow,    intflow_set_bcu => set_bcu &
-      ,                       intflow_set_bcv => set_bcv &
-      ,              intflow_boundary_simplec => get_boundary_simplec_coefficients_internal_flow2 &
-      , intflow_extrapolate_u_v_to_fictitious => get_u_v_at_fictitious_nodes_with_pl &
-      ,     intflow_get_T_from_H_conservation => get_T_from_H_conservation_internal_flow
+
+   use mod_intflow_procedures,    intflow_set_bcu => set_bcu &
+      ,                           intflow_set_bcv => set_bcv &
+      ,                  intflow_boundary_simplec => get_boundary_simplec_coefficients_internal_flow2 &
+      ,     intflow_extrapolate_u_v_to_fictitious => get_u_v_at_fictitious_nodes_with_pl &
+      ,         intflow_get_T_from_H_conservation => get_T_from_H_conservation_internal_flow
 
    implicit none
 
@@ -31,7 +33,8 @@ module mod_intflow
       ,        intflow_velocities_at_boundary_faces  &
       ,        intflow_extrapolate_u_v_to_fictitious &
       ,        intflow_get_T_from_H_conservation     &
-      ,        intflow_calc_main_variables
+      ,        intflow_calc_main_variables           &
+      ,        intflow_grid_boundary
 
    !> \brief Data to be used in the internal flow calculation
    type, public :: type_intflow
@@ -96,7 +99,7 @@ contains
 
    !> \brief Calculates initial conditions for internal flow
    subroutine intflow_initial_conditions( nx, ny, modvis, beta & ! Input
-      ,                 thermomodel, ye, yk, radius, rn, x, xp & ! Input
+      ,              thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
       ,                                                  iflow & ! InOutput
       ,                           p, T, u, v, ue, un, Uce, Vcn & ! Output
       ,                                   de, dn, ro, roe, ron ) ! Output
@@ -112,6 +115,7 @@ contains
       real(8), dimension(nx*ny), intent(in) :: radius !< Radius of northest corner of volume P
       real(8), dimension(nx*ny), intent(in) :: rn     !< Radius of the center of north face of volume P
       real(8), dimension(nx*ny), intent(in) :: x      !< Coord. x of the northest corner of volume P
+      real(8), dimension(nx*ny), intent(in) :: y      !< Coord. x of the northest corner of volume P
       real(8), dimension(nx*ny), intent(in) :: xp     !< Coord. x of the centroid of volume P
 
       type(type_intflow),     intent(inout) :: iflow  !< Data for internal flow
@@ -155,8 +159,7 @@ contains
          ,      iflow%T1D(nx) &
          ,      iflow%u1D(nx) )
 
-      associate(      ig => iflow%geom%ig &
-            ,         Sg => iflow%geom%Sg &
+      associate(      Sg => iflow%geom%Sg &
             ,         po => iflow%P0      &
             ,         T0 => iflow%T0      &
             ,        M1D => iflow%M1D     &
@@ -172,11 +175,11 @@ contains
             ,       Fd1D => iflow%Fd1D    &
             ,      Fpv1D => iflow%Fpv1D   )
 
-         call get_initial_guess( nx, ny, ig, modvis, beta, po, T0, gamma  & ! Input
-         ,                       Rg, Sg, ye, yk, radius, rn, x, xp        & ! Input
+         call get_initial_guess( nx, ny, modvis, beta, po, T0, gamma      & ! Input
+         ,                       Rg, Sg, ye, yk, radius, rn, x, y, xp     & ! Input
          ,                       M1D, p1D, T1D, u1D, p, T, u, v, ue       & ! Output
          ,                       un, Uce, Vcn, uin, vin, pin, Tin, Mw     & ! Output
-         ,                       fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron)   ! Output
+         ,                       fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron  ) ! Output
 
       end associate
 
@@ -304,6 +307,29 @@ contains
 
       write(msg(1), "(3(1X,A23))")     "fmi", "fme/fmi", "Fd"
       write(msg(2), "(3(1X,ES23.16))")   fmi,   fme/fmi,  Fd
+
+   end subroutine
+
+
+   !> \brief Defines the south and north boundary of the domain
+   subroutine intflow_grid_boundary(nx, ny, x, y, iflow, a1) ! Output: last four
+      implicit none
+      integer,                   intent(in)  ::  nx !< Number of volumes in the csi direction (real+fictitious)
+      integer,                   intent(in)  ::  ny !< Number of volumes in the eta direction (real+fictitious)
+      real(8), dimension(nx*ny), intent(out) ::   x !< Coord. x at the northeast corner of the volume P (m)
+      real(8), dimension(nx*ny), intent(out) ::   y !< Coord. y at the northeast corner of the volume P (m)
+      type(type_intflow),        intent(out) :: iflow  !< Variables related to internal flow
+      real(8),                   intent(out) :: a1
+! TODO (guilherme#1#): Read or calculate a1
+
+      integer :: ig
+      integer :: kg
+
+      kg = 1
+      a1 = 1E-6
+
+      call get_boundary_nodes( nx, ny, ig, iflow%geom%Sg, iflow%geom%rcg) ! Output: last three entries
+      call set_grid_internal_flow(kg, nx, ny, a1, x, y) ! Last 2 are output
 
    end subroutine
 

@@ -1209,16 +1209,14 @@ contains
   end subroutine get_mach_area
 
 
-  subroutine get_initial_guess( nx, ny, ig, modvis, beta, po, T0, gamma  & ! Input
-       ,                        Rg, Sg, ye, yk, radius, rn, x, xp        & ! Input
+  subroutine get_initial_guess( nx, ny, modvis, beta, po, T0, gamma      & ! Input
+       ,                        Rg, Sg, ye, yk, radius, rn, x, y, xp     & ! Input
        ,                        M1D, p1D, T1D, u1D, p, T, u, v, ue       & ! Output
        ,                        un, Uce, Vcn, uin, vin, pin, Tin, Mw     & ! Output
-       ,                        fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron  & ! Output
-       ,                        a, ap, b ) ! Output
+       ,                        fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron)   ! Output
     implicit none
     integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
     integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
-    integer, intent(in) :: ig
     integer, intent(in) :: modvis ! modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
     real(8), intent(in) :: beta   ! Constant of the UDS/CDS mixing scheme
     real(8), intent(in) :: po     ! Stagnation pressure in the chamber
@@ -1231,6 +1229,7 @@ contains
     real(8), dimension(nx*ny), intent(in) :: radius ! Radius of northest corner of volume P
     real(8), dimension(nx*ny), intent(in) :: rn     ! Radius of the center of north face of volume P
     real(8), dimension(nx*ny), intent(in) :: x      ! Coord. x of the northest corner of volume P
+    real(8), dimension(nx*ny), intent(in) :: y      ! Coord. y of the northest corner of volume P
     real(8), dimension(nx*ny), intent(in) :: xp     ! Coord. x of the centroid of volume P
 
     real(8), intent(out) :: fm1D  !
@@ -1265,19 +1264,16 @@ contains
     real(8), dimension(nx*ny), intent(out) :: roe ! Absolute density at east face
     real(8), dimension(nx*ny), intent(out) :: ron ! Absolute density at north face
 
-    real(8), dimension(nx*ny,9), intent(out) :: a  ! Coefficients of the linear system for u, v, T
-    real(8), dimension(nx*ny,5), intent(out) :: ap ! Coefficients of the linear system
-    real(8), dimension(nx*ny),   intent(out) :: b  ! Source vector of the linear system
-
-
     ! Auxiliary variables
     real(8), parameter :: pi = acos(-1.d0)
 
     integer :: i, j, np, npe, npw, npww, kf
     real(8) :: Si, Me1D, pe1D, Te1D, ue1D, aux
+    integer :: ig
 
     call get_isentropic_mass_flow( po, T0, gamma, Rg, Sg , fm1D)
 
+    ig = get_ig()
 
     ! Calculating isentropic solution
 
@@ -1361,7 +1357,6 @@ contains
 
     ! Initial guess of velocities in east face of each CV
     ! and analytical solution in the entrance and exit boundaries
-
     do i = 1, nx-1
 
        j = ny-1
@@ -1427,11 +1422,32 @@ contains
     ! Specific mass at faces
     call get_density_at_faces( nx, ny, beta, ro, Uce, Vcn, roe, ron) ! roe and ron are output
 
-    a  = 0.d0
-    ap = 0.d0
-    b  = 0.d0
+  contains
 
-    ap(:,3) = 1.d0
+     integer function get_ig()
+        implicit none
+        integer i, j, np
+
+        get_ig = 1
+
+        j = ny-1
+
+        do i = 2, nx-1
+
+           np = nx * (j-1) + i
+
+           if ( y(np-1) < y(np)  ) then
+
+               get_ig = i-1
+
+               return
+
+           end if
+
+        end do
+
+     end function
+
 
   end subroutine get_initial_guess
 
