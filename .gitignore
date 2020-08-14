@@ -3,3 +3,5 @@ mach2d.layout
 mach2d_output*
 bin
 obj
+/mach2d_input/gridboundary.dat
+/fort.101

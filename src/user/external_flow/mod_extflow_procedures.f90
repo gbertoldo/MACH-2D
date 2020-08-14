@@ -3,9 +3,9 @@
 !!
 module mod_extflow_procedures
 
-   use thermophysical ! Thermophysical module
-   use bc9d           ! Boundary conditions for 9-diagonal linear systems
-   use bc5d           ! Boundary conditions for 5-diagonal linear systems
+   use mod_thermophysical ! Thermophysical module
+   use bc9d               ! Boundary conditions for 9-diagonal linear systems
+   use bc5d               ! Boundary conditions for 5-diagonal linear systems
 
    implicit none
 

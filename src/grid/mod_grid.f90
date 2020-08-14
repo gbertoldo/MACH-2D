@@ -9,6 +9,11 @@ module mod_grid
    use mod_grid_data
    use mod_grid_procedures
    use mod_extflow
+   use mod_intflow
+
+! TODO (guilherme#1#): Remove these modules
+      use grid_internal_flow
+      use user_internal_flow
 
    implicit none
 
@@ -68,12 +73,14 @@ contains
 
 
    !> \brief Creates the grid and related metrics
-   subroutine grid_create(unt, coord                                  & ! Input
+   subroutine grid_create(unt, coord, kflow, iflow                    & ! Input
          ,  x, y, xp, yp, xe, ye, xen, yen, xk, yk, xke, yke, Jp      & ! Output
          ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp  ) ! Output
       implicit none
       integer,               intent(in)  :: unt    !< Unit where the input parameters will be printed
       integer,               intent(in)  :: coord  !< Coordinate system ( 1=cylindrical, 0 = cartesian)
+      integer,               intent(in)  :: kflow  !< Kind of flow (internal or external)
+      type(type_intflow),    intent(out) :: iflow  !< Variables related to internal flow
       real(8), dimension(:), intent(out) :: x      !<
       real(8), dimension(:), intent(out) :: y      !<
       real(8), dimension(:), intent(out) :: xp     !< Coord. x of the centroid of volume P
@@ -98,23 +105,34 @@ contains
       real(8), dimension(:), intent(out) :: rn     !< Radius of the center of north face of volume P
       real(8), dimension(:), intent(out) :: rp     !< Radius of the center of volume P
 
+! TODO (guilherme#1#): Develop a better way to create the grid that may be compatible to both internal and external flow
+
       ! Getting the finest grid
+      if ( kflow == 0 ) then ! External flow
 
-      ! Generates the grid north and south boundary
-      call extflow_grid_boundary(nxf, nyf, unt, xf, yf) ! Output: last four
+         ! Generates the grid north and south boundary
+         call extflow_grid_boundary(nxf, nyf, unt, xf, yf) ! Output: last four
 
-      ! Estimates the boundary layer width and the width of the volume
-      ! closer to the wall
-      call extflow_boundary_layer(cbl, wbl, a1) ! Output: last two
+         ! Estimates the boundary layer width and the width of the volume
+         ! closer to the wall
+         call extflow_boundary_layer(cbl, wbl, a1) ! Output: last two
 
-      ! Generates the grid according to kg option
-      call set_grid(kg, nxf, nyf, a1, avi, avf, awf, xf, yf) ! Last 2 are inoutput
+         ! Generates the grid according to kg option
+         call set_grid(kg, nxf, nyf, a1, avi, avf, awf, xf, yf) ! Last 2 are inoutput
 
-      ! Selecting the desided grid
-      call get_coarser_grid(nxf, nyf, nx, ny, nmf, nmd, xf, yf, x, y)
+         ! Selecting the desided grid
+         call get_coarser_grid(nxf, nyf, nx, ny, nmf, nmd, xf, yf, x, y)
 
-      ! Removing the (now) unnecessary finest grid
-      deallocate(xf, yf)
+         ! Removing the (now) unnecessary finest grid
+         deallocate(xf, yf)
+
+      else ! Internal flow
+
+         a1 = 1E-6
+         call get_boundary_nodes( nx, ny, iflow%geom%ig, iflow%geom%Sg, iflow%geom%rcg) ! Output: last three entries
+         call set_grid_internal_flow(kg, nx, ny, a1, x, y) ! Last 2 are output
+
+      end if
 
       ! Calculates the centroids of each real volume
       call get_real_centroids_xy( kcm, nx, ny, x, y, xp, yp ) ! Output: last two

@@ -8,6 +8,7 @@ module mod_mach2d_data
    use mod_class_thermophysical_abstract
    use mod_class_solver_abstract
    use mod_grid
+   use mod_intflow
 
    implicit none
 
@@ -169,6 +170,15 @@ module mod_mach2d_data
    real(8), allocatable, dimension(:) :: Tbn !< T over the faces of the north boundary (K)
    real(8), allocatable, dimension(:) :: Tbs !< T over the faces of the south boundary (K)
 
+   !
+   !  KIND OF FLOW RELATED VARIABLES
+   !
+   integer, parameter :: EXTERNAL_FLOW = 0  !< Option for external flow calculation
+   integer, parameter :: INTERNAL_FLOW = 1  !< Option for internal flow calculation
+   integer            ::             kflow  !< Stores the option of flow
+
+   type(type_intflow) :: iflow !< Data structure to store internal flow related variables
+
 contains
 
    subroutine get_parameters
@@ -192,6 +202,7 @@ contains
       ! Getting desired parameters
       call ifile%get_value(   sim_id,   "sim_id") ! Simulation identification  (up to 100 characters)
       call ifile%get_value(    coord,    "coord") ! Kind of coord. system ( 1=cylindrical, 0 = cartesian)
+      call ifile%get_value(    kflow,    "kflow") ! Kind of flow (0=external, 1=internal)
       call ifile%get_value(    itmax,    "itmax") ! Maximum number of iterations for time cycle
       call ifile%get_value(   itmmax,   "itmmax") ! Maximum number of iterations for mass cycle
       call ifile%get_value(   itpmax,   "itpmax") ! Maximum number of iteractions for pressure cycle
@@ -386,6 +397,7 @@ contains
       Tbs = 0.d0
 
       ap = 0.d0
+      ap(:,3) = 1.d0
       bp = 0.d0
       pl = 0.d0
 

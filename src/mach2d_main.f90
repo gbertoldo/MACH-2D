@@ -30,12 +30,18 @@ program main
    call thermophysical_initialization(ifile, thermomodel, Rg, ktm) ! Output: last three
 
 
-   ! Initializing external flow module
-   call extflow_init(ifile, thermomodel, Tref, Href, Cpref) ! Output: last three
+   ! Initializing variables related to internal or external flow
+   if ( kflow == EXTERNAL_FLOW ) then
+      ! Initializing external flow module
+      call extflow_init(ifile, thermomodel, Tref, Href, Cpref) ! Output: last three
+   else
+      ! Initializing reference values and internal flow variables
+      call intflow_init(ifile, thermomodel, Tref, Href, Cpref, iflow) ! Output: last four
+   end if
 
 
    ! Creating the grid and calculating the metrics
-   call grid_create(lid, coord                                        & ! Input
+   call grid_create(lid, coord, kflow, iflow                          & ! Input
          ,  x, y, xp, yp, xe, ye, xen, yen, xk, yk, xke, yke, Jp      & ! Output
          ,  Je, Jn, alphae, gamman, betae, betan, radius, re, rn, rp  ) ! Output
 
@@ -44,12 +50,21 @@ program main
    call initialize_boundary_faces_flags(nx, ny, fbe, fbn) ! Output: last 2
 
 
-   ! Sets the initial conditions for external flow
-   call extflow_initial_conditions(nx, ny, itemax, modvis, Rg, xe, ye & ! Input
-      ,                               xk, yk, xke, yke, alphae, betae & ! Input
-      ,                      p, T, ro, roe, ron, u, v, ue, ve, un, vn & ! Output
-      ,                                  Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! Output
-
+   ! Selecting initial condition in accordance to the kind of flow
+   if ( kflow == EXTERNAL_FLOW ) then
+      ! Sets the initial conditions for external flow
+      call extflow_initial_conditions(nx, ny, itemax, modvis, Rg, xe, ye & ! Input
+         ,                               xk, yk, xke, yke, alphae, betae & ! Input
+         ,                      p, T, ro, roe, ron, u, v, ue, ve, un, vn & ! Output
+         ,                                  Uce, Vcn, Tbn, Tbs, Tbe, Tbw ) ! Output
+   else
+      !> \brief Calculates initial conditions for internal flow
+      call intflow_initial_conditions( nx, ny, modvis, beta & ! Input
+         ,           thermomodel, ye, yk, radius, rn, x, xp & ! Input
+         ,                                            iflow & ! InOutput
+         ,                     p, T, u, v, ue, un, Uce, Vcn & ! Output
+         ,                             de, dn, ro, roe, ron ) ! Output
+   end if
 
    ! Initializes the vectors with specific heat Cp, viscosity mu
    ! and thermal conductivity kappa based on the reference temperature Tref.
@@ -88,6 +103,11 @@ program main
       una = un
       vna = vn
 
+      if ( kflow == INTERNAL_FLOW ) then
+         ! Update inlet conditions and extrapolates pressure to fictitious
+         ! according to boundary conditions.
+         call intflow_time_cycle_update(nx, ny, x, xp, u, thermomodel, iflow, p) ! InOutput: last two
+      end if
 
       ! Calculations of the thermophysical properties
       if ( ktm == THERMOPHYSICAL_VARIABLE ) then ! Temperature dependent thermophysical properties
@@ -157,8 +177,13 @@ program main
             ,                   Uce, Vcn, ua, u, v, cup, sup, bu ) ! The last 3 are output
 
 
-         call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae, u, v & ! Intput
-            ,                                                      au, bu ) ! Output
+         ! Boundary conditions for u
+         if ( kflow == EXTERNAL_FLOW ) then
+            call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae, u, v & ! Intput
+               ,                                                      au, bu ) ! Output
+         else
+            call intflow_set_bcu(nx, ny, modvis, x, xp, u, au, bu) ! Output: last two
+         end if
 
 
          ! Coefficients of the linear system for v (real volumes)
@@ -174,7 +199,12 @@ program main
             ,                          Uce, Vcn, va, u, v, cvp, svp, bv ) ! Last 3 are output
 
 
-         call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, av, bv ) ! Output: last two
+         ! Boundary conditions for v
+         if ( kflow == EXTERNAL_FLOW ) then
+            call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, av, bv ) ! Output: last two
+         else
+            call intflow_set_bcv(nx, ny, modvis, x, xp, v, av, bv) ! Output: last two
+         end if
 
 
          ! Calculates SIMPLEC coefficients at the internal real faces
@@ -182,10 +212,14 @@ program main
             , yk, au, av, due, dve, dun, dvn, de, dn ) ! Output: last 6
 
 
-
          ! Calculates the SIMPLEC coefficients at the boundary faces
-         call extflow_boundary_simplec( nx, ny, modvis & ! Input
-            ,               due, dve, dun, dvn, de, dn ) ! InOutput
+         if ( kflow == EXTERNAL_FLOW ) then
+            call extflow_boundary_simplec( nx, ny, modvis & ! Input
+               ,               due, dve, dun, dvn, de, dn ) ! InOutput
+         else
+            call intflow_boundary_simplec( nx, ny, modvis & ! Input
+               ,               due, dve, dun, dvn, de, dn ) ! InOutput
+         end if
 
 
          ! Solves the linear system for u
@@ -210,8 +244,14 @@ program main
 
 
          ! Calculates the velocities at boundary faces
-         call extflow_velocities_at_boundary_faces( nx, ny, xe, ye, xk, yk, u, v & ! Input
-            ,                                           ue, ve, un, vn, Uce, Vcn ) ! Output
+         if ( kflow == EXTERNAL_FLOW ) then
+            call extflow_velocities_at_boundary_faces( nx, ny, xe, ye, xk, yk, u, v & ! Input
+               ,                                           ue, ve, un, vn, Uce, Vcn ) ! Output
+         else
+            call intflow_velocities_at_boundary_faces(nx, ny, ye, u, v & ! Input
+               ,                                        ue, ve, un, vn & ! InOutput
+               ,                                              Uce, Vcn ) ! Output
+         end if
 
 
          ! Initializing the pressure deviation
@@ -225,10 +265,12 @@ program main
             call get_p_coefficients(nx, ny, dt, rp, re, rn, Jp, Uce, Vcn &
                ,                                 roe, ron, g, de, dn, ap ) ! Output: last one
 
-
             ! Defines the numerical scheme for the boundary conditions of pl
-            call extflow_set_bcpl(nx, ny, ap, bp) ! Output: last eight
-
+            if ( kflow == EXTERNAL_FLOW ) then
+               call extflow_set_bcpl(nx, ny, ap, bp) ! Output: last eight
+            else
+               call intflow_set_bcpl(nx, ny, x, xp, pl, iflow, ap, bp) ! Output: last two
+            end if
 
             ! Calculates the source of the linear system of the pressure correction
             call get_p_source(nx, ny, dt, rp, re, rn, Jp, roe, ron, ro, roa &
@@ -243,9 +285,19 @@ program main
             call get_velocity_correction_at_faces_with_pl(nx, ny, xe, ye, xk, yk &
                ,        due, dve, dun, dvn, de, dn, pl, ue, ve, un, vn, Uce, Vcn ) ! InOutput: last six
 
+            ! Correcting boundary velocities and pressure field
+            if ( kflow == INTERNAL_FLOW ) then
+               call intflow_velocities_at_boundary_faces(nx, ny, ye, u, v & ! Input
+                  ,                                        ue, ve, un, vn & ! InOutput
+                  ,                                              Uce, Vcn ) ! Output
+
+               ! Pressure correction  (SIMPLEC method)
+               call get_pressure_correction_with_pl( nx, ny, pl, p) ! InOutput: last two
+            end if
 
             ! Density correction
             call get_density_correction_with_pl( nx, ny, pl, g, ro) ! InOutput: last one
+
 
 
             ! Calculates density at faces using the corrected density and velocities
@@ -263,18 +315,19 @@ program main
          call norm_l1_5d( nx, ny, pl, bp, ap, norm)
 
 
-         ! Pressure correction  (SIMPLEC method)
-         call get_pressure_correction_with_pl( nx, ny, pl, p) ! InOutput: last two
+         ! Extrapolates p and to to fictitious
+         if ( kflow == EXTERNAL_FLOW ) then
 
+            ! Pressure correction  (SIMPLEC method)
+            call get_pressure_correction_with_pl( nx, ny, pl, p) ! InOutput: last two
 
-         ! Extrapolates ro to fictitious volumes in accordance to bc
-         call extflow_extrapolate_ro_to_fictitious(nx, ny, itemax, alphae &
-            ,                                    betae, betan, gamman, ro ) ! InOutput: last one
+            ! Extrapolates ro to fictitious volumes in accordance to bc
+            call extflow_extrapolate_ro_to_fictitious(nx, ny, itemax, alphae &
+               ,                                    betae, betan, gamman, ro ) ! InOutput: last one
 
-
-         ! Calculates the values of p at fictitious volumes
-         call extflow_p_extrapolation_to_fictitious(nx, ny, p) ! InOutput: last one
-
+            ! Calculates the values of p at fictitious volumes
+            call extflow_p_extrapolation_to_fictitious(nx, ny, p) ! InOutput: last one
+         end if
 
 
          ! Velocity correction (SIMPLEC method)
@@ -282,11 +335,14 @@ program main
             ,                                yk, rp, pl, au, av & ! Input
             ,                                              u, v ) ! Input and Output
 
-
-         ! Extrapolates u and v to fictitious volumes in accordance to bc
-         call extflow_extrapolate_u_v_to_fictitious(nx, ny, modvis, itemax &
-            ,                                  xk, yk, alphae, betae, u, v ) ! InOutput: last two
-
+         ! Extrapolates u and v to fictitious
+         if ( kflow == EXTERNAL_FLOW ) then
+            ! Extrapolates u and v to fictitious volumes in accordance to bc
+            call extflow_extrapolate_u_v_to_fictitious(nx, ny, modvis, itemax &
+               ,                                  xk, yk, alphae, betae, u, v ) ! InOutput: last two
+         else
+            call intflow_extrapolate_u_v_to_fictitious( nx, ny, modvis, x, xp, u, v) ! InOutput: last two
+         end if
 
       end do
 
@@ -296,15 +352,20 @@ program main
          ,                                   ron, roe, Uce, Vcn, rmass ) ! Output: last one
 
 
-      ! Selecting between Euler and Navier-Stokes equations
-      if ( modvis == 0 .and. ktm == THERMOPHYSICAL_CONSTANT ) then ! Euler with constant thermophysical properties
-
+      ! Calculation of T based on total enthalpy conservation is enabled only
+      ! for Euler model with constant thermophysical properties of external flows
+      if (      modvis == 0                       &
+         .and.     ktm == THERMOPHYSICAL_CONSTANT &
+         .and.   kflow == EXTERNAL_FLOW           ) then ! Euler with constant thermophysical properties
 
          ! Calculates the temperature based on the conservation of the total enthalpy
          ! Valid for Euler model with constant thermo-physical coefficients.
          ! Temperature is extrapolated to fictitious volumes with CDS the scheme
-         call get_T_from_H_conservation(nx, ny, Cpref, Href, u, ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs) ! Output: last 5
-
+         !if ( kflow == EXTERNAL_FLOW ) then
+            call get_T_from_H_conservation(nx, ny, Cpref, Href, u, ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs) ! Output: last 5
+         !else
+         !   call intflow_get_T_from_H_conservation(nx, ny, Cpref, Href, u, ue, un, v, ve, vn, T, Tbe, iflow%Tin, Tbn, Tbs) ! Output: last 5 ! Output: last 5
+         !end if
 
       else ! Variable thermophysical properties
 
@@ -316,7 +377,12 @@ program main
 
 
          ! Defines the numerical scheme for the boundary conditions of T
-         call extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, at, bt ) ! Output: last two
+         if ( kflow == EXTERNAL_FLOW ) then
+            call extflow_set_bcT(nx, ny, alphae, betae, betan, gamman, at, bt ) ! Output: last two
+         else
+            call intflow_set_bcT(nx, ny, x, xp, T, iflow, at, bt) ! Output: last two
+         end if
+
 
          ! Solves the linear system for T
          call solver9d%solve(at, bt, T)
@@ -326,21 +392,26 @@ program main
 
       end if
 
+      if ( kflow == EXTERNAL_FLOW ) then
+         ! Calculating p from the state equation
+         p = ro * Rg * T
 
-      ! Calculating p from the state equation
-      p = ro * Rg * T
+         ! Calculates the values of p at fictitious volumes
+         call extflow_p_extrapolation_to_fictitious(nx, ny, p) ! InOutput: last one
+      else
+         ! Calculating ro at all nodes according to state equation
+         call get_density_at_nodes( nx, ny, Rg, p, T, ro) ! ro is output
 
-
-      ! Calculates the values of p at fictitious volumes
-      call extflow_p_extrapolation_to_fictitious(nx, ny, p) ! InOutput: last one
-
+         ! Calculating ro at all faces by interpolation
+         call get_density_at_faces( nx, ny, beta, ro, Uce, Vcn, roe, ron) ! roe and ron are output
+      end if
 
       ! Selecting the next time step
       dt = tstepper_dt(it, nx, ny, dt, au, av, at, ap)
 
 
       ! Calculates and prints main variables
-      call calc_print_main_variables()
+      call calc_print_main_variables(.false.)
 
 
       ! Checking for wrong results
@@ -378,47 +449,61 @@ program main
    RAM = 0.d0 !get_RAM(sim_id)
 
 
-   ! Closing file of residuals
-   close(rid)
-
-
-   ! Calculating main variables
-   call extflow_calc_main_variables(nx, ny, Rg, modvis, xk, yk, rn, Jn, vln, p, u, v, Vcn, msg(2)) ! Output: last one
+   ! Calculates and prints main variables
+   call calc_print_main_variables(.true.)
 
 
    ! Performing post-processing
    call extflow_postp()
 
+
+   ! Closing file of residuals
+   close(rid)
+
 contains
 
    !> \brief Calculates and prints the main variables
-   subroutine calc_print_main_variables()
+   subroutine calc_print_main_variables(hasFinished)
       implicit none
+      logical, intent(in) :: hasFinished !< Main loop has finished? (true, false)
 
-      if ( it == 1 ) then
+      if ( kflow == EXTERNAL_FLOW ) then
 
-         call extflow_calc_main_variables(nx, ny, Rg, modvis, xk, yk, rn, Jn &
-            ,                                         vln, p, u, v, Vcn, msg ) ! Output: last one
+         ! Calculates the main variables of internal flow
+         call extflow_calc_main_variables(nx, ny, Rg, modvis, xk, yk, rn, Jn, vln, p, u, v, Vcn, msg) ! Output: last one
 
-         write(  *,"(A10, 4(1X, A14), A)") 'it', 'norm', 'max(|pl|)/p_avg'  &
-            , 'dt', 'rmass', msg(1)
+      else ! INTERNAL_FLOW
 
-         write(rid,"(A10, 4(1X, A14), A)") 'it', 'norm', 'max(|pl|)/p_avg'  &
-            , 'dt', 'rmass', msg(1)
+         ! Calculates the main variables of internal flow
+         call intflow_calc_main_variables(nx, ny, re, roe, u, Uce, msg)
 
-         write(  *,"(I10, 4(1X,ES14.7), A)") it, norm, normpl, dt, rmass, trim(msg(2))
-         write(rid,"(I10, 4(1X,ES14.7), A)") it, norm, normpl, dt, rmass, trim(msg(2))
+      end if
+
+
+     ! Printing header
+     if ( it == 1 ) then
+
+         write(  *,"(A10, 4(1X, A14), A)") 'it'               &
+            ,                              'dt'               &
+            ,                              'norm'             &
+            ,                              'max(|pl|)/p_avg'  &
+            ,                              'rmass'            &
+            ,                              msg(1)
+
+         write(rid,"(A10, 4(1X, A14), A)") 'it'               &
+            ,                              'dt'               &
+            ,                              'norm'             &
+            ,                              'max(|pl|)/p_avg'  &
+            ,                              'rmass'            &
+            ,                              msg(1)
 
       end if
 
       ! Printing data
+      if ( mod( it, wlf ) == 0 .or. hasFinished ) then
 
-      if ( mod( it, wlf ) == 0 ) then
-
-         call extflow_calc_main_variables(nx, ny, Rg, modvis, xk, yk, rn, Jn, vln, p, u, v, Vcn, msg) ! Output: last one
-
-         write(  *,"(I10, 4(1X,ES14.7), A)") it, norm, normpl, dt, rmass, trim(msg(2))
-         write(rid,"(I10, 4(1X,ES14.7), A)") it, norm, normpl, dt, rmass, trim(msg(2))
+         write(  *,"(I10, 4(1X,ES14.7), A)") it, dt, norm, normpl, rmass, trim(msg(2))
+         write(rid,"(I10, 4(1X,ES14.7), A)") it, dt, norm, normpl, rmass, trim(msg(2))
 
       end if
 

@@ -11,6 +11,7 @@ FLOW PARAMETERS
 ===============
                                 1 & modvis & Viscosity model (0=Euler, 1=NS)
                                 1 & coord  & Kind of coord. system ( 1=cylindrical, 0 = cartesian)                                
+                                0 & kflow  & Kind of flow (0=external, 1=internal)                                
 EXTERNAL FLOW PARAMETERS
 ========================
   ./mach2d_input/geometry_g01.txt & fgeom  & File of the geometric parameters
@@ -20,6 +21,12 @@ EXTERNAL FLOW PARAMETERS
             3.000000000000000E+02 & TF     & Far field temperature (K)
             3.500000000000000E+00 & MF     & Mach number of the free stream
 
+INTERNAL FLOW PARAMETERS
+========================
+    ./mach2d_input/nozzle_g01.txt & ngeom  & File of the nozzle geometric parameters
+           -6.167000000000000E+02 & Tnbc   & Temperature on the north boundary (K) (if negative, adiabatic bc is applied)
+                              1D6 & P0     & Stagnation pressure (Pa)
+                            500D0 & T0     & Stagnation temperature (K)
 -------------------------------------------------------------------------------------------------------------------------------------------
 
 GRID PARAMETERS
