@@ -16,18 +16,16 @@ module mod_thermophysical
    integer, parameter, public :: THERMOPHYSICAL_CONSTANT = 0
    integer, parameter, public :: THERMOPHYSICAL_VARIABLE = 1
 
-   class(class_thermophysical_abstract), pointer, private :: thermomodel !< A pointer to the thermophysical model
-
 contains
 
 
    !> \brief Initializes variables related to the thermophysical properties of the gas
-   subroutine thermophysical_initialization(ifile, tm, Rg, ktm) ! Output: last three
+   subroutine thermophysical_initialization(ifile, thermomodel, Rg, ktm) ! Output: last three
       implicit none
-      class(class_ifile),                            intent(in)  :: ifile !< Input file
-      class(class_thermophysical_abstract), pointer, intent(out) :: tm    !< A pointer to the thermophysical model
-      real(8),                                       intent(out) :: Rg    !< Gas constant (J/kg.K)
-      integer,                                       intent(out) :: ktm   !< Kind of thermophysical model: constant or variable
+      class(class_ifile),                            intent(in)  :: ifile       !< Input file
+      class(class_thermophysical_abstract), pointer, intent(out) :: thermomodel !< A pointer to the thermophysical model
+      real(8),                                       intent(out) :: Rg          !< Gas constant (J/kg.K)
+      integer,                                       intent(out) :: ktm         !< Kind of thermophysical model: constant or variable
 
       ! Inner variables
       character(len=500) :: caux
@@ -71,8 +69,6 @@ contains
 
       end select
 
-      tm => thermomodel
-
       Rg = thermomodel%Rg
 
    end subroutine
@@ -80,8 +76,10 @@ contains
 
    !> \brief Calculates cp at the center of each real volume and over the
    !! boundaries. The boundary values are stored in the fictitious volumes.
-   subroutine set_cp( nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+   subroutine set_cp(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
       implicit none
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
       integer,                   intent(in)  :: nx  !< Number of volumes in the csi direction (real+fictitious)
       integer,                   intent(in)  :: ny  !< Number of volumes in the eta direction (real+fictitious)
       real(8), dimension(nx),    intent(in)  :: Tbn !< Temperature over the north boundary (K)
@@ -222,8 +220,10 @@ contains
    !> \brief Calculates gamma = Cp / Cv at the center of each real volume and
    !! over the boundaries based on Cp and Rg. The boundary values are stored in
    !! the fictitious volumes.
-   subroutine set_gamma( nx, ny, Rg, cp, gcp) ! Output: last one
+   subroutine set_gamma(thermomodel, nx, ny, Rg, cp, gcp) ! Output: last one
       implicit none
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
       integer,                   intent(in)  :: nx  !< Number of volumes in the csi direction (real+fictitious)
       integer,                   intent(in)  :: ny  !< Number of volumes in the eta direction (real+fictitious)
       real(8),                   intent(in)  :: Rg  !< Perfect gas constant (J/(kg.K))
@@ -236,8 +236,10 @@ contains
 
 
    !> \brief Calculates the laminar viscosity at the nodes of real volumes
-   subroutine set_laminar_viscosity_at_nodes(nx, ny, T, vlp) ! Output: last one
+   subroutine set_laminar_viscosity_at_nodes(thermomodel, nx, ny, T, vlp) ! Output: last one
       implicit none
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
       integer,                   intent(in)  :: nx  !< Number of volumes in csi direction (real+fictitious)
       integer,                   intent(in)  :: ny  !< Number of volumes in eta direction (real+fictitious)
       real(8), dimension(nx*ny), intent(in)  :: T   !< Temperature of the last iteraction (K)
@@ -264,8 +266,10 @@ contains
 
 
    !> \brief Calculates the thermal conductivity at the nodes of real volumes
-   subroutine set_thermal_conductivity_at_nodes(nx, ny, T, kp) ! Output: last one
+   subroutine set_thermal_conductivity_at_nodes(thermomodel, nx, ny, T, kp) ! Output: last one
       implicit none
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
       integer,                   intent(in)  :: nx !< Number of volumes in csi direction (real+fictitious)
       integer,                   intent(in)  :: ny !< Number of volumes in eta direction (real+fictitious)
       real(8), dimension(nx*ny), intent(in)  :: T  !< Temperature of the last iteraction (K)
@@ -292,10 +296,12 @@ contains
 
 
    !> \brief Calculates the laminar viscosity at faces
-   subroutine get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+   subroutine get_laminar_viscosity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
       implicit none
-      integer, intent(in) :: nx         !< Number of volumes in csi direction (real+fictitious)
-      integer, intent(in) :: ny         !< Number of volumes in eta direction (real+fictitious)
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
+      integer,                   intent(in)  :: nx         !< Number of volumes in csi direction (real+fictitious)
+      integer,                   intent(in)  :: ny         !< Number of volumes in eta direction (real+fictitious)
       real(8), dimension(nx),    intent(in)  :: Tbn !< Temperature over the north boundary (K)
       real(8), dimension(nx),    intent(in)  :: Tbs !< Temperature over the south boundary (K)
       real(8), dimension(ny),    intent(in)  :: Tbe !< Temperature over the  east boundary (K)
@@ -397,8 +403,10 @@ contains
 
 
    !> \brief Calculates the thermal conductivity at faces
-   subroutine get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+   subroutine get_thermal_conductivity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
       implicit none
+      class(class_thermophysical_abstract) &
+         ,              pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
       integer,                   intent(in)  :: nx  !< Number of volumes in csi direction (real+fictitious)
       integer,                   intent(in)  :: ny  !< Number of volumes in eta direction (real+fictitious)
       real(8), dimension(nx),    intent(in)  :: Tbn !< Temperature over the north boundary (K)
@@ -552,7 +560,7 @@ contains
       else ! Temperature dependent thermophysical properties
 
          ! Calculates cp at the center of each real volume
-         call set_cp(nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+         call set_cp(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
 
 
          ! Thermophysical properties for the Navier-Stokes equations only
@@ -560,21 +568,21 @@ contains
          if ( modvis == 1 ) then
 
             ! Calculates the laminar viscosity at the nodes of real volumes
-            call set_laminar_viscosity_at_nodes(nx, ny, T, vlp)
+            call set_laminar_viscosity_at_nodes(thermomodel, nx, ny, T, vlp)
             ! Output: last one
 
 
             ! Calculates the thermal conductivity at the nodes of real volumes
-            call set_thermal_conductivity_at_nodes(nx, ny, T, kp)
+            call set_thermal_conductivity_at_nodes(thermomodel, nx, ny, T, kp)
             ! Output: last one
 
 
             ! Calculates the laminar viscosity at faces
-            call get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+            call get_laminar_viscosity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
 
 
             ! Calculates the thermal conductivity at faces
-            call get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+            call get_thermal_conductivity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
 
          end if
 

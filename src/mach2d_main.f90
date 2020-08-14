@@ -119,7 +119,7 @@ program main
 
 
          ! Calculates cp at the center of each real volume and over the boundaries
-         call set_cp(nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
+         call set_cp(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, T, cp) ! Output: last one
 
 
          ! Thermophysical properties for the Navier-Stokes equations only
@@ -127,19 +127,19 @@ program main
          if ( modvis == 1 ) then
 
             ! Calculates the laminar viscosity at the nodes of real volumes
-            call set_laminar_viscosity_at_nodes(nx, ny, T, vlp) ! Output: last one
+            call set_laminar_viscosity_at_nodes(thermomodel, nx, ny, T, vlp) ! Output: last one
 
 
             ! Calculates the thermal conductivity at the nodes of real volumes
-            call set_thermal_conductivity_at_nodes(nx, ny, T, kp) ! Output: last one
+            call set_thermal_conductivity_at_nodes(thermomodel, nx, ny, T, kp) ! Output: last one
 
 
             ! Calculates the laminar viscosity at faces
-            call get_laminar_viscosity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
+            call get_laminar_viscosity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, vlp, vle, vln) ! Output: last two
 
 
             ! Calculates the thermal conductivity at faces
-            call get_thermal_conductivity_at_faces(nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
+            call get_thermal_conductivity_at_faces(thermomodel, nx, ny, Tbn, Tbs, Tbe, Tbw, kp, ke, kn) ! Output: last two
 
          end if
 

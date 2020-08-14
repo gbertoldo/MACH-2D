@@ -224,7 +224,7 @@ contains
       call post_processing_boundaries( nx, ny, x, y, xp, yp, u, v, p, T ) ! InOutput: last six entries
 
       ! Calculates gamma for real volumes and boundaries
-      call set_gamma(nx, ny, Rg, cp, gcp) ! Output: last one
+      call set_gamma(thermomodel, nx, ny, Rg, cp, gcp) ! Output: last one
 
       ! Calculates the Mach number field
       M = dsqrt ( (u**2 + v**2) / (gcp * Rg * T) )
