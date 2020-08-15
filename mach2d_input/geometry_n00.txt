@@ -1,0 +1,16 @@
+===========================================================================================================================================
+
+                                              GEOMETRY N00 CONFIGURATION FILE
+                                              
+All data must follow the input pattern: "value & variable & description", where '&' is the separation field delimiter. 
+                         Lines that do not follow this pattern are considered comments by default.
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------- 
+     
+                     N00 & ID     & Geometry ID
+
+All parameters are defined in the source code. This file is keept for legacy reason.
+
+===========================================================================================================================================

@@ -1,0 +1,26 @@
+===========================================================================================================================================
+
+                                              GEOMETRY N01 CONFIGURATION FILE
+                                              
+All data must follow the input pattern: "value & variable & description", where '&' is the separation field delimiter. 
+                         Lines that do not follow this pattern are considered comments by default.
+
+Calculates the coordinates (x,y) of the north and south boundaries. The north boundary line is the contour of a nozzle formed by a chamber
+of length Lchamb and radius Rin, followed by a convergent section of angle alf. The junction of chamber and convergent is a circular path 
+of radius Rc1. The convergent section is connected to the divergent section by two circular paths. The first one has curvature radius Rc2 
+and the second one has curvature radius Rc3. The divergent section has angle bet and ends with radius Rout.
+
+------------------------------------------------------------------------------------------------------------------------------------------- 
+     
+                     N01 & ID     & Geometry ID
+     2.2910800000000E-02 & Rth    & Throat radius (m)
+     6.4395244991040E-02 & Rin    & Inflow radius (m)
+     3.7366383992332E-02 & Rout   & Outflow radius (m)
+     3.6068000000000E-02 & Rc1    & Radius of curvature bet. cham. and conv. section (m)
+     4.5720000000000E-02 & Rc2    & Radius of curvature bet. conv. section and throat (m)
+     4.5720000000000E-02 & Rc3    & Radius of curvature bet. throat and div. section (m)
+                   30.d0 & alf    & Conv. section angle (deg)
+                   15.d0 & bet    & Div. section angle (deg)
+                   2.d-2 & Lchamb & Length of the chamber (m)
+
+===========================================================================================================================================

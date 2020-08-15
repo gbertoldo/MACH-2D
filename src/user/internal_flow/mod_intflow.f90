@@ -46,6 +46,7 @@ module mod_intflow
 
       ! Geometric parameters for internal flow calculations
       type(type_intflow_geometry) :: geom
+      type(class_ifile)           :: gfile
 
       ! Quasi-1D solution
       real(8), allocatable, dimension(:) :: M1D !< Mach number. Isentropic flow
@@ -81,11 +82,13 @@ contains
       real(8),                                       intent(out) :: Cpref       !< Reference Cp (J/kg.K)
       type(type_intflow),                            intent(out) :: iflow       !< Data for internal flow
 
+      ! Inner variables
+      character(len=200) :: ngeom
 
       call ifile%get_value(    iflow%P0,       "P0") ! Stagnation pressure (Pa)
       call ifile%get_value(    iflow%T0,       "T0") ! Stagnation temperature (K)
       call ifile%get_value( iflow%Twall,     "Tnbc") ! Temperature on the north boundary (K) (if negative, adiabatic bc is applied)
-      !call ifile%get_value(    ngeom,    "ngeom") ! File of boundary geometry
+      call ifile%get_value(       ngeom,    "ngeom") ! File of boundary geometry
 
       ! Calculating reference values
       Tref  = iflow%T0
@@ -93,6 +96,10 @@ contains
       Href  = Cpref * Tref
 
       iflow%Cp0 = Cpref
+
+      ! Reading the geometry file
+      call iflow%gfile%init(trim(ngeom), "&")
+      call iflow%gfile%load()
 
    end subroutine
 
@@ -314,22 +321,48 @@ contains
    !> \brief Defines the south and north boundary of the domain
    subroutine intflow_grid_boundary(nx, ny, x, y, iflow, a1) ! Output: last four
       implicit none
-      integer,                   intent(in)  ::  nx !< Number of volumes in the csi direction (real+fictitious)
-      integer,                   intent(in)  ::  ny !< Number of volumes in the eta direction (real+fictitious)
-      real(8), dimension(nx*ny), intent(out) ::   x !< Coord. x at the northeast corner of the volume P (m)
-      real(8), dimension(nx*ny), intent(out) ::   y !< Coord. y at the northeast corner of the volume P (m)
-      type(type_intflow),        intent(out) :: iflow  !< Variables related to internal flow
-      real(8),                   intent(out) :: a1
+      integer,                   intent(in)    ::  nx !< Number of volumes in the csi direction (real+fictitious)
+      integer,                   intent(in)    ::  ny !< Number of volumes in the eta direction (real+fictitious)
+      real(8), dimension(nx*ny), intent(out)   ::   x !< Coord. x at the northeast corner of the volume P (m)
+      real(8), dimension(nx*ny), intent(out)   ::   y !< Coord. y at the northeast corner of the volume P (m)
+      type(type_intflow),        intent(inout) :: iflow  !< Variables related to internal flow
+      real(8),                   intent(out)   :: a1
 ! TODO (guilherme#1#): Read or calculate a1
 
-      integer :: ig
-      integer :: kg
+      integer           :: ig  ! i=ig at throat
+      integer           :: kg  ! kind of grid
+      character(len=50) :: GID ! Geometry ID
+      real(8)           :: Rth ! Throat radius
+      real(8)           :: Rc  ! Throat radius of curvature
 
-      kg = 1
-      a1 = 1E-6
+      ! Reading the geometry ID
+      call iflow%gfile%get_value( GID, "ID")
 
-      call get_boundary_nodes( nx, ny, ig, iflow%geom%Sg, iflow%geom%rcg) ! Output: last three entries
-      call set_grid_internal_flow(kg, nx, ny, a1, x, y) ! Last 2 are output
+      ! Choosing between options
+      if ( trim(GID) == "N00" ) then
+
+         kg = 1
+         a1 = 1E-6
+         call get_boundary_nodes( nx, ny, ig, iflow%geom%Sg, iflow%geom%rcg) ! Output: last three entries
+         call set_grid_internal_flow(kg, nx, ny, a1, x, y) ! Last 2 are output
+
+      else if ( trim(GID) == "N01" ) then
+
+         call get_grid_boundary_nozzle01(iflow%gfile, nx, ny, x, y) ! Output: last two
+
+         call iflow%gfile%get_value( Rth, "Rth")
+         call iflow%gfile%get_value(  Rc, "Rc2")
+
+         iflow%geom%Sg = acos(-1.d0) * Rth**2
+         iflow%geom%rcg = Rc
+
+      else
+         write(*,*) "intflow_grid_boundary:"
+         write(*,*) "Unknown option: ", trim(GID)
+         write(*,*) "Stopping..."
+         stop
+      end if
+
 
    end subroutine
 

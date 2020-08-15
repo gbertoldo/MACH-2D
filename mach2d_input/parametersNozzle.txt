@@ -23,7 +23,7 @@ EXTERNAL FLOW PARAMETERS
 
 INTERNAL FLOW PARAMETERS
 ========================
-    ./mach2d_input/nozzle_g01.txt & ngeom  & File of the nozzle geometric parameters
+  ./mach2d_input/geometry_n01.txt & ngeom  & File of the nozzle geometric parameters
            -6.167000000000000E+02 & Tnbc   & Temperature on the north boundary (K) (if negative, adiabatic bc is applied)
                               1D6 & P0     & Stagnation pressure (Pa)
                             500D0 & T0     & Stagnation temperature (K)
@@ -33,7 +33,7 @@ GRID PARAMETERS
 ===============
                                20 & nxi-2  & Number of real volumes in the csi direction of the coarsest grid
                                10 & nyi-2  & Number of real volumes in the eta direction of the coarsest grid
-                                1 & nmf    & Number of the finest mesh  (1<=nmf)
+                                6 & nmf    & Number of the finest mesh  (1<=nmf)
                                 1 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
                                 1 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
                            1.0E00 & avi    & Initial value of the artificial viscosity (only for kg=5)
@@ -81,8 +81,8 @@ TIME-STEP MODEL
                               100 & it1     & number of iteractions up to which dt = dt1 for RAMP model
                               600 & it2     & number of iteractions from which dt = dt2 for RAMP model
             0.010000000000000E+00 & h0      & Amplitude of h in the TSI11 SCARBOROUGH model
-            0.600000000000000E+00 & mincc   & Minimum allowed value of the convergence coefficient for SCARBOROUGH model
-            0.920000000000000E+00 & maxcc   & Maximum allowed value of the convergence coefficient for SCARBOROUGH model
+            0.990000000000000E+00 & mincc   & Minimum allowed value of the convergence coefficient for SCARBOROUGH model
+            0.999900000000000E+00 & maxcc   & Maximum allowed value of the convergence coefficient for SCARBOROUGH model
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 

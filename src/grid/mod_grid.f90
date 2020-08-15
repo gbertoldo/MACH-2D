@@ -105,7 +105,7 @@ contains
       real(8), dimension(:), intent(out) :: re     !< Radius of the center of east face of volume P
       real(8), dimension(:), intent(out) :: rn     !< Radius of the center of north face of volume P
       real(8), dimension(:), intent(out) :: rp     !< Radius of the center of volume P
-      type(type_intflow),    intent(out) :: iflow  !< Variables related to internal flow
+      type(type_intflow),  intent(inout) :: iflow  !< Variables related to internal flow
 
 ! TODO (guilherme#1#): Develop a better way to create the grid that may be compatible to both internal and external flow
 
