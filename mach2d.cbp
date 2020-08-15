@@ -146,7 +146,7 @@
 			<Option weight="2" />
 		</Unit>
 		<Unit filename="src/user/internal_flow/mod_intflow_geometry.f90">
-			<Option weight="0" />
+			<Option weight="1" />
 		</Unit>
 		<Unit filename="src/user/internal_flow/mod_intflow_procedures.f90">
 			<Option weight="1" />

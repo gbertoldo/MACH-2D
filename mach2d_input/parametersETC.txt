@@ -23,7 +23,7 @@ EXTERNAL FLOW PARAMETERS
 
 INTERNAL FLOW PARAMETERS
 ========================
-    ./mach2d_input/nozzle_g01.txt & ngeom  & File of the nozzle geometric parameters
+  ./mach2d_input/geometry_n01.txt & ngeom  & File of the nozzle geometric parameters
            -6.167000000000000E+02 & Tnbc   & Temperature on the north boundary (K) (if negative, adiabatic bc is applied)
                               1D6 & P0     & Stagnation pressure (Pa)
                             500D0 & T0     & Stagnation temperature (K)
@@ -41,6 +41,9 @@ GRID PARAMETERS
                            0.3E00 & awf    & Area weighting factor (only for kg=5)
                                 1 & kcm    & Kind of centroid mean (1=simple mean, 2=weighted mean)
             0.040000000000000E+00 & cbl    & The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
+                             1d-5 & a1     & Width of the vol. closer to the wall (this values is used if cbl < 0)
+
+Note: boundary layer estimate and kg=5 only work for external flow
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 

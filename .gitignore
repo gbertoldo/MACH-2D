@@ -5,3 +5,4 @@ bin
 obj
 /mach2d_input/gridboundary.dat
 /fort.101
+/ValgrindOut.xml

@@ -9,7 +9,6 @@ module mod_intflow
    use mod_intflow_geometry
    use mod_intflow_procedures
 
-
    use mod_intflow_procedures,    intflow_set_bcu => set_bcu &
       ,                           intflow_set_bcv => set_bcv &
       ,                  intflow_boundary_simplec => get_boundary_simplec_coefficients_internal_flow2 &
@@ -35,6 +34,7 @@ module mod_intflow
       ,        intflow_get_T_from_H_conservation     &
       ,        intflow_calc_main_variables           &
       ,        intflow_grid_boundary
+
 
    !> \brief Data to be used in the internal flow calculation
    type, public :: type_intflow
@@ -312,25 +312,21 @@ contains
 
       call get_mass_flow_rate_and_thrust(nx, ny, re, roe, u, Uce, fmi, fme, Fd) ! Output: last three entries
 
-      write(msg(1), "(3(1X,A23))")     "fmi", "fme/fmi", "Fd"
-      write(msg(2), "(3(1X,ES23.16))")   fmi,   fme/fmi,  Fd
+      write(msg(1), "(3(1X,A23))")      "fmi", "fme/fmi", "Fd"
+      write(msg(2), "(3(1X,ES23.16))")   fmi,   fme/fmi,   Fd
 
    end subroutine
 
 
    !> \brief Defines the south and north boundary of the domain
-   subroutine intflow_grid_boundary(nx, ny, x, y, iflow, a1) ! Output: last four
+   subroutine intflow_grid_boundary(nx, ny, x, y, iflow) ! Output: last four
       implicit none
-      integer,                   intent(in)    ::  nx !< Number of volumes in the csi direction (real+fictitious)
-      integer,                   intent(in)    ::  ny !< Number of volumes in the eta direction (real+fictitious)
-      real(8), dimension(nx*ny), intent(out)   ::   x !< Coord. x at the northeast corner of the volume P (m)
-      real(8), dimension(nx*ny), intent(out)   ::   y !< Coord. y at the northeast corner of the volume P (m)
-      type(type_intflow),        intent(inout) :: iflow  !< Variables related to internal flow
-      real(8),                   intent(out)   :: a1
-! TODO (guilherme#1#): Read or calculate a1
+      integer,                   intent(in)    ::    nx !< Number of volumes in the csi direction (real+fictitious)
+      integer,                   intent(in)    ::    ny !< Number of volumes in the eta direction (real+fictitious)
+      real(8), dimension(nx*ny), intent(out)   ::     x !< Coord. x at the northeast corner of the volume P (m)
+      real(8), dimension(nx*ny), intent(out)   ::     y !< Coord. y at the northeast corner of the volume P (m)
+      type(type_intflow),        intent(inout) :: iflow !< Variables related to internal flow
 
-      integer           :: ig  ! i=ig at throat
-      integer           :: kg  ! kind of grid
       character(len=50) :: GID ! Geometry ID
       real(8)           :: Rth ! Throat radius
       real(8)           :: Rc  ! Throat radius of curvature
@@ -339,14 +335,7 @@ contains
       call iflow%gfile%get_value( GID, "ID")
 
       ! Choosing between options
-      if ( trim(GID) == "N00" ) then
-
-         kg = 1
-         a1 = 1E-6
-         call get_boundary_nodes( nx, ny, ig, iflow%geom%Sg, iflow%geom%rcg) ! Output: last three entries
-         call set_grid_internal_flow(kg, nx, ny, a1, x, y) ! Last 2 are output
-
-      else if ( trim(GID) == "N01" ) then
+      if ( trim(GID) == "N01" ) then
 
          call get_grid_boundary_nozzle01(iflow%gfile, nx, ny, x, y) ! Output: last two
 
@@ -362,7 +351,6 @@ contains
          write(*,*) "Stopping..."
          stop
       end if
-
 
    end subroutine
 

@@ -9,7 +9,7 @@ All data must follow the input pattern: "value & variable & description", where 
 
 FLOW PARAMETERS
 ===============
-                                0 & modvis & Viscosity model (0=Euler, 1=NS)
+                                1 & modvis & Viscosity model (0=Euler, 1=NS)
                                 1 & coord  & Kind of coord. system ( 1=cylindrical, 0 = cartesian)  
                                 1 & kflow  & Kind of flow (0=external, 1=internal)                                
 EXTERNAL FLOW PARAMETERS
@@ -34,13 +34,16 @@ GRID PARAMETERS
                                20 & nxi-2  & Number of real volumes in the csi direction of the coarsest grid
                                10 & nyi-2  & Number of real volumes in the eta direction of the coarsest grid
                                 6 & nmf    & Number of the finest mesh  (1<=nmf)
-                                1 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
-                                1 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
+                                4 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
+                                2 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
                            1.0E00 & avi    & Initial value of the artificial viscosity (only for kg=5)
                         1000.0E00 & avf    & Final value of the artificial viscosity (only for kg=5)
                            0.3E00 & awf    & Area weighting factor (only for kg=5)
                                 1 & kcm    & Kind of centroid mean (1=simple mean, 2=weighted mean)
-            0.040000000000000E+00 & cbl    & The width of the vol. closer to the wall is 'cbl' times the width of the b. layer
+                          -0.04d0 & cbl    & The width of the vol. closer to the wall is 'cbl' times the width of the b. layer (if cbl<0, uses a1)
+                             1d-6 & a1     & Width of the vol. closer to the wall (this values is used if cbl < 0)
+
+Note: boundary layer estimate and kg=5 only work for external flow
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 
