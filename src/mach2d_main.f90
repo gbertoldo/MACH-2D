@@ -1,7 +1,7 @@
 !>
 !! \brief      MACH-2D
-!!                 Version: 5.9.0
-!!             Last update: 12/08/2020 by Guilherme Bertoldo
+!!                 Version: 5.10.0
+!!             Last update: 16/08/2020 by Guilherme Bertoldo
 !!
 program main
 

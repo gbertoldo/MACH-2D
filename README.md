@@ -1,5 +1,7 @@
-# MACH-2D
+# MACH-2D 5.10.0
 2D flow field simulation.
+
+Solves external and internal compressible flow.
 
 
 ToDo
