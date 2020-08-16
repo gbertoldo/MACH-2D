@@ -17,6 +17,7 @@ program main
    use coefficients
    use mod_extflow
    use mod_extflow_postp
+   use mod_intflow_postp
 
    implicit none
 
@@ -452,8 +453,11 @@ program main
 
 
    ! Performing post-processing
-   call extflow_postp()
-
+   if ( kflow == EXTERNAL_FLOW ) then
+      call extflow_postp()
+   else
+      call intflow_postp()
+   end if
 
    ! Closing file of residuals
    close(rid)

@@ -1273,7 +1273,8 @@ contains
 
     call get_isentropic_mass_flow( po, T0, gamma, Rg, Sg , fm1D)
 
-    ig = get_ig()
+    ! i=ig when the throat cross section is in the east face of the CV
+    ig = get_ig(nx, ny, y)
 
     ! Calculating isentropic solution
 
@@ -1422,34 +1423,38 @@ contains
     ! Specific mass at faces
     call get_density_at_faces( nx, ny, beta, ro, Uce, Vcn, roe, ron) ! roe and ron are output
 
-  contains
-
-     integer function get_ig()
-        implicit none
-        integer i, j, np
-
-        get_ig = 1
-
-        j = ny-1
-
-        do i = 2, nx-1
-
-           np = nx * (j-1) + i
-
-           if ( y(np-1) < y(np)  ) then
-
-               get_ig = i-1
-
-               return
-
-           end if
-
-        end do
-
-     end function
-
-
   end subroutine get_initial_guess
+
+
+   !> \brief i=ig when the throat cross section is in the east face of the CV
+  integer function get_ig(nx, ny, y)
+     implicit none
+     integer,                   intent(in) :: nx !< Number of volumes in csi direction (real+fictitious)
+     integer,                   intent(in) :: ny !< Number of volumes in eta direction (real+fictitious)
+     real(8), dimension(nx*ny), intent(in) :: y  !< Coord. y of the northest corner of volume P
+
+     integer i, j, np
+
+     get_ig = 1
+
+     j = ny-1
+
+     do i = 2, nx-1
+
+        np = nx * (j-1) + i
+
+        if ( y(np-1) < y(np)  ) then
+
+            get_ig = i-1
+
+            return
+
+        end if
+
+     end do
+
+  end function
+
 
   subroutine get_boundary_nodes( nx, ny, ig, Sg, rcg) ! Output: last three entries
     implicit none

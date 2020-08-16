@@ -1,5 +1,3 @@
-"parametersETC.txt"  ....: Input parameters data file
 "parametersNozzle.txt"  ....: Input parameters data file
-
-
+"parametersNTV.txt"  ....: Input parameters data file
 
