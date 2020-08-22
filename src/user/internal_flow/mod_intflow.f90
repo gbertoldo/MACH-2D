@@ -108,8 +108,8 @@ contains
    subroutine intflow_initial_conditions( nx, ny, modvis, beta & ! Input
       ,              thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
       ,                                                  iflow & ! InOutput
-      ,                           p, T, u, v, ue, un, Uce, Vcn & ! Output
-      ,                                   de, dn, ro, roe, ron ) ! Output
+      ,                   p, T, u, v, ue, un, ve, vn, Uce, Vcn & ! Output
+      ,               de, dn, ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
       integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
       integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
@@ -134,6 +134,8 @@ contains
 
       real(8), dimension(nx*ny), intent(out) :: ue  ! Cartesian velocity u at center of east face
       real(8), dimension(nx*ny), intent(out) :: un  ! Cartesian velocity u at center of north face
+      real(8), dimension(nx*ny), intent(out) :: ve  !< Cartesian velocity v at center of east face (m/s)
+      real(8), dimension(nx*ny), intent(out) :: vn  !< Cartesian velocity v at center of north face (m/s)
       real(8), dimension(nx*ny), intent(out) :: Uce ! Contravariant velocity U at east face
       real(8), dimension(nx*ny), intent(out) :: Vcn ! Contravariant velocity V at north face
 
@@ -143,8 +145,14 @@ contains
       real(8), dimension(nx*ny), intent(out) :: ro  ! Specific mass (absolute density) at center of volumes
       real(8), dimension(nx*ny), intent(out) :: roe ! Absolute density at east face
       real(8), dimension(nx*ny), intent(out) :: ron ! Absolute density at north face
-
+      real(8), dimension(nx),    intent(out) :: Tbn !< Temperature over the north boundary (K)
+      real(8), dimension(nx),    intent(out) :: Tbs !< Temperature over the south boundary (K)
+      real(8), dimension(ny),    intent(out) :: Tbe !< Temperature over the  east boundary (K)
+      real(8), dimension(ny),    intent(out) :: Tbw !< Temperature over the  west boundary (K)
       real(8) :: gamma, Rg
+
+      ve = 0.d0
+      vn = 0.d0
 
       gamma = thermomodel%gm(iflow%T0)
       Rg    = thermomodel%Rg
@@ -187,6 +195,11 @@ contains
          ,                       M1D, p1D, T1D, u1D, p, T, u, v, ue       & ! Output
          ,                       un, Uce, Vcn, uin, vin, pin, Tin, Mw     & ! Output
          ,                       fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron  ) ! Output
+
+         Tbw = Tin
+         Tbs = T1D
+         Tbn = T1D
+         Tbe = T1D(nx-1)
 
       end associate
 

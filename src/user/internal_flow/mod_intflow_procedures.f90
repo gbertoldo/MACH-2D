@@ -1267,7 +1267,7 @@ contains
     ! Auxiliary variables
     real(8), parameter :: pi = acos(-1.d0)
 
-    integer :: i, j, np, npe, npw, npww, kf
+    integer :: i, j, np, npe, npw, npww, npn, nps, kf
     real(8) :: Si, Me1D, pe1D, Te1D, ue1D, aux
     integer :: ig
 
@@ -1355,6 +1355,39 @@ contains
        T(np) = T(npw) + 2.d0 * ( x(npw) - xp(npw) ) / ( xp(npw) - xp(npww) ) * ( T(npw)-T(npww) )
 
     end do
+
+    ! Calculating p and T in the SW corner
+    i = 1
+    j = 1
+    np   = nx * (j-1) + i
+    npn  = np + nx
+    p(np) = p(npn)
+    T(np) = T(npn)
+
+    ! Calculating p and T in the SE corner
+    i = nx
+    j = 1
+    np   = nx * (j-1) + i
+    npn  = np + nx
+    p(np) = p(npn)
+    T(np) = T(npn)
+
+    ! Calculating p and T in the NW corner
+    i = 1
+    j = ny
+    np   = nx * (j-1) + i
+    nps  = np - nx
+    p(np) = p(nps)
+    T(np) = T(nps)
+
+    ! Calculating p and T in the NE corner
+    i = nx
+    j = ny
+    np   = nx * (j-1) + i
+    nps  = np - nx
+    p(np) = p(nps)
+    T(np) = T(nps)
+
 
     ! Initial guess of velocities in east face of each CV
     ! and analytical solution in the entrance and exit boundaries

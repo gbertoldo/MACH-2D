@@ -21,6 +21,6 @@ and the second one has curvature radius Rc3. The divergent section has angle bet
      4.5720000000000E-02 & Rc3    & Radius of curvature bet. throat and div. section (m)
                    30.d0 & alf    & Conv. section angle (deg)
                    15.d0 & bet    & Div. section angle (deg)
-                   2.d-2 & Lchamb & Length of the chamber (m)
+     2.2910800000000E-02 & Lchamb & Length of the chamber (m)
 
 ===========================================================================================================================================

@@ -61,8 +61,9 @@ program main
       call intflow_initial_conditions( nx, ny, modvis, beta & ! Input
          ,        thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
          ,                                            iflow & ! InOutput
-         ,                     p, T, u, v, ue, un, Uce, Vcn & ! Output
-         ,                             de, dn, ro, roe, ron ) ! Output
+         ,             p, T, u, v, ue, un, ve, vn, Uce, Vcn & ! Output
+         ,         de, dn, ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
+
    end if
 
    ! Initializes the vectors with specific heat Cp, viscosity mu
