@@ -34,7 +34,8 @@ module mod_extflow
       ,      extflow_extrapolate_u_v_to_fictitious  &
       ,      extflow_extrapolate_ro_to_fictitious   &
       ,      extflow_p_extrapolation_to_fictitious  &
-      ,      extflow_calc_main_variables
+      ,      extflow_calc_main_variables            &
+      ,      extflow_boundary_T_from_H_conservation
 
 contains
 
@@ -428,5 +429,118 @@ contains
          ,                                     b9bn, b9bs, b9be, b9bw, ro ) ! InOutput: last one
 
    end subroutine
+
+
+   !> \brief Calculates the boundary temperature based on the conservation of
+   !! the total enthalpy. Valid for Euler model with constant thermo-physical
+   !! coefficients. Temperature is extrapolated to fictitious volumes with CDS
+   !! the scheme.
+   subroutine extflow_boundary_T_from_H_conservation(nx, ny, CPF, HF, u &
+         ,                     ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs ) ! Output: last 5. T is inout
+      implicit none
+      integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
+      integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
+      real(8), intent(in) :: CPF !< Free stream Cp (J/kg.K)
+      real(8), intent(in) :: HF  !< Free stream total enthalpy (m2/s2)
+      real(8), dimension (nx*ny), intent(in)  :: u    !< Cartesian velocity at P
+      real(8), dimension (nx*ny), intent(in)  :: ue   !< Cartesian velocity u at center of east face
+      real(8), dimension (nx*ny), intent(in)  :: un   !< Cartesian velocity u at center of north face
+      real(8), dimension (nx*ny), intent(in)  :: v    !< Cartesian velocity at P
+      real(8), dimension (nx*ny), intent(in)  :: ve   !< Cartesian velocity v at center of east face
+      real(8), dimension (nx*ny), intent(in)  :: vn   !< Cartesian velocity v at center of north face
+      real(8), dimension (nx*ny), intent(out) :: T    !< Temperature at P
+      real(8), dimension (ny),    intent(out) :: Tbe  !< Temperature over the  east boundary (K)
+      real(8), dimension (ny),    intent(out) :: Tbw  !< Temperature over the  west boundary (K)
+      real(8), dimension (nx),    intent(out) :: Tbn  !< Temperature over the north boundary (K)
+      real(8), dimension (nx),    intent(out) :: Tbs  !< Temperature over the south boundary (K)
+
+      ! Inner variables
+
+      integer :: i, j, np, npe, npn
+
+
+
+      ! Temperature on the nodes
+
+      T = ( HF - (u**2+v**2) / 2.d0 ) / CPF
+
+
+      ! Temperature on the east boundary
+
+      i = nx-1
+
+      do j = 2, ny-1
+
+         np   = nx * (j-1) + i
+
+         Tbe(j) = ( HF - (ue(np)**2+ve(np)**2) / 2.d0 ) / CPF
+
+         ! Extrapolating to fictitious
+
+         npe  = np + 1
+
+         T(npe) = 2.d0 * Tbe(j) - T(np)
+
+      end do
+
+
+      ! Temperature on the west boundary
+
+      i = 1
+
+      do j = 2, ny-1
+
+         np   = nx * (j-1) + i
+
+         Tbw(j) = ( HF - (ue(np)**2+ve(np)**2) / 2.d0 ) / CPF
+
+         ! Extrapolating to fictitious
+
+         npe  = np + 1
+
+         T(np) = 2.d0 * Tbw(j) - T(npe)
+
+      end do
+
+
+      ! Temperature on the north boundary
+
+      j = ny-1
+
+      do i = 2, nx-1
+
+         np   = nx * (j-1) + i
+
+         Tbn(i) = ( HF - (un(np)**2+vn(np)**2) / 2.d0 ) / CPF
+
+         ! Extrapolating to fictitious
+
+         npn  = np + nx
+
+         T(npn) = 2.d0 * Tbn(i) - T(np)
+
+      end do
+
+
+      ! Temperature on the north boundary
+
+      j = 1
+
+      do i = 2, nx-1
+
+         np   = nx * (j-1) + i
+
+         Tbs(i) = ( HF - (un(np)**2+vn(np)**2) / 2.d0 ) / CPF
+
+         ! Extrapolating to fictitious
+
+         npn  = np + nx
+
+         T(np) = 2.d0 * Tbs(i) - T(npn)
+
+      end do
+
+
+   end subroutine extflow_boundary_T_from_H_conservation
 
 end module

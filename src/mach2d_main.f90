@@ -353,19 +353,25 @@ program main
 
 
       ! Calculation of T based on total enthalpy conservation is enabled only
-      ! for Euler model with constant thermophysical properties of external flows
+      ! for Euler model with constant thermophysical properties
       if (      modvis == 0                       &
          .and.     ktm == THERMOPHYSICAL_CONSTANT &
          .and.   kflow == EXTERNAL_FLOW           ) then ! Euler with constant thermophysical properties
 
-         ! Calculates the temperature based on the conservation of the total enthalpy
-         ! Valid for Euler model with constant thermo-physical coefficients.
-         ! Temperature is extrapolated to fictitious volumes with CDS the scheme
-         !if ( kflow == EXTERNAL_FLOW ) then
-            call get_T_from_H_conservation(nx, ny, Cpref, Href, u, ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs) ! Output: last 5
-         !else
-         !   call intflow_get_T_from_H_conservation(nx, ny, Cpref, Href, u, ue, un, v, ve, vn, T, Tbe, iflow%Tin, Tbn, Tbs) ! Output: last 5 ! Output: last 5
-         !end if
+         ! Temperature at the centroid of all nodes (real and fictitious)
+         T = ( Href - (u**2+v**2) / 2.d0 ) / Cpref
+
+         ! Calculates the boundary temperature based on the  boundary conditions
+         ! and on conservation of the total enthalpy (valid for Euler model with constant
+         ! thermo-physical coefficients). Temperature is extrapolated to fictitious
+         ! volumes using the CDS scheme.
+         if ( kflow == EXTERNAL_FLOW  ) then
+            call extflow_boundary_T_from_H_conservation(nx, ny, Cpref, Href, u &
+               ,                      ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs ) ! Output: last 5. T is inout
+         else
+            call intflow_boundary_T_from_H_conservation(nx, ny, Cpref, Href, iflow &
+               ,                       u, ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs ) ! Output: last 5. T is inout
+         end if
 
       else ! Variable thermophysical properties
 
