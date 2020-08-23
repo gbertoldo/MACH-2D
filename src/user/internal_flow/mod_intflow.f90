@@ -1070,57 +1070,33 @@ contains
       i = 1
       j = 1
       np   = nx * (j-1) + i
-      nps  = np - nx
       npn  = np + nx
-      npw  = np - 1
-      npe  = np + 1
-      npsw = nps - 1
-      npse = nps + 1
-      npnw = npn - 1
-      npne = npn + 1
-      p(np) = (p(npn)+p(npe)+p(npne)) / 3.d0
+
+      p(np) = p(npn)
 
       ! SE corner
       i = nx
       j = 1
       np   = nx * (j-1) + i
-      nps  = np - nx
       npn  = np + nx
-      npw  = np - 1
-      npe  = np + 1
-      npsw = nps - 1
-      npse = nps + 1
-      npnw = npn - 1
-      npne = npn + 1
-      p(np) = (p(npn)+p(npw)+p(npnw)) / 3.d0
+
+      p(np) = p(npn)
 
       ! NW corner
       i = 1
       j = ny
       np   = nx * (j-1) + i
       nps  = np - nx
-      npn  = np + nx
-      npw  = np - 1
-      npe  = np + 1
-      npsw = nps - 1
-      npse = nps + 1
-      npnw = npn - 1
-      npne = npn + 1
-      p(np) = (p(nps)+p(npe)+p(npse)) / 3.d0
+
+      p(np) = p(nps)
 
       ! NE corner
       i = nx
       j = ny
       np   = nx * (j-1) + i
       nps  = np - nx
-      npn  = np + nx
-      npw  = np - 1
-      npe  = np + 1
-      npsw = nps - 1
-      npse = nps + 1
-      npnw = npn - 1
-      npne = npn + 1
-      p(np) = (p(nps)+p(npw)+p(npsw)) / 3.d0
+
+      p(np) = p(nps)
 
    end subroutine get_plin_and_p_fictitious
 
