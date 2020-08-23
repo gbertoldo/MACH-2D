@@ -394,7 +394,7 @@ contains
 
       ! Inner variables
 
-      integer :: i, j, np, npe, npn
+      integer :: i, j, np, npe, npn, nps
 
 
       ! Temperature on the east boundary
@@ -472,6 +472,36 @@ contains
 
       end do
 
+      ! Extrapolating to the SW corner
+      i = 1
+      j = 1
+      np   = nx * (j-1) + i
+      npn  = np + nx
+      T(np) = T(npn)
+
+      ! Extrapolating to the SE corner
+      i = nx
+      j = 1
+      np   = nx * (j-1) + i
+      npn  = np + nx
+
+      T(np) = T(npn)
+
+      ! Extrapolating to the NW corner
+      i = 1
+      j = ny
+      np   = nx * (j-1) + i
+      nps  = np - nx
+
+      T(np) = T(nps)
+
+      ! Extrapolating to the NE corner
+      i = nx
+      j = ny
+      np   = nx * (j-1) + i
+      nps  = np - nx
+
+      T(np) = T(nps)
 
    end subroutine intflow_boundary_T_from_H_conservation
 

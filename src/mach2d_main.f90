@@ -355,8 +355,7 @@ program main
       ! Calculation of T based on total enthalpy conservation is enabled only
       ! for Euler model with constant thermophysical properties
       if (      modvis == 0                       &
-         .and.     ktm == THERMOPHYSICAL_CONSTANT &
-         .and.   kflow == EXTERNAL_FLOW           ) then ! Euler with constant thermophysical properties
+         .and.     ktm == THERMOPHYSICAL_CONSTANT ) then ! Euler with constant thermophysical properties
 
          ! Temperature at the centroid of all nodes (real and fictitious)
          T = ( Href - (u**2+v**2) / 2.d0 ) / Cpref
