@@ -1,30 +1,4 @@
 module mod_intflow_procedures
-  !
-  !  SUBROUTINES
-  !
-  !  1) set_wall_temperature
-  !  2) set_cp_and_gamma
-  !  3) set_laminar_viscosity_at_nodes
-  !  4) set_thermal_conductivity_at_nodes
-  !  5) get_laminar_viscosity_at_faces
-  !  6) get_thermal_conductivity_at_faces
-  !  7) set_bcu
-  !  8) set_bcv
-  !  9) set_bcT
-  ! 10) set_bcp
-  ! 11) get_uin_vin_pin_Tin_Mw
-  ! 12) get_plin_and_p_fictitious
-  ! 13) get_u_v_at_fictitious_nodes_with_pl
-  ! 14) get_boundary_simplec_coefficients
-  ! 15) get_Uce_Vcn_at_boundary_faces
-  ! 16) get_Uce_Vcn_at_boundary_faces_with_pl
-  ! 16) get_isentropic_mass_flow
-  ! 17) get_mach_area
-  ! 18) get_initial_guess
-  ! 19) get_boundary_nodes
-  !
-  ! Last update: 03 Oct 2011
-  !
 
   use coefficients
 
@@ -32,136 +6,24 @@ module mod_intflow_procedures
 
 contains
 
-  subroutine set_wall_temperature( nx, Twall ) ! Last one is output
+  subroutine set_bcu( nx, ny, modvis, x, xp, xk, yk, u, v, au, b) ! Output: last two entries
     implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    real(8), dimension(nx), intent(out) :: Twall ! Wall temperature
-
-    Twall = 300.d0
-
-  end subroutine set_wall_temperature
-
-
-  subroutine set_cp_and_gamma_internal_flow( nx, ny, Rg, cp, gcp) ! Last two are output
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), intent(in) :: Rg  ! Perfect gas constant
-    real(8), dimension(nx*ny), intent(out) :: cp  ! Specific heat at const pressure
-    real(8), dimension(nx*ny), intent(out) :: gcp ! gcp = gamma = Cp/Cv at center of CV P
-
-    cp = 1004.5d0
-
-    gcp = cp / ( cp - Rg )
-
-  end subroutine set_cp_and_gamma_internal_flow
-
-
-  subroutine set_laminar_viscosity_at_nodes_internal_flow( nx, ny, vlp) ! Last one is output
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(out) :: vlp ! Laminar viscosity at center of volume P
-
-    vlp = 1.d-5 ! (Units Pa.s)
-
-  end subroutine set_laminar_viscosity_at_nodes_internal_flow
-
-
-  subroutine set_thermal_conductivity_at_nodes_internal_flow( nx, ny, kp) ! Last one is output
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(out) :: kp ! Thermal conductivity at center of volume P
-
-    kp = 1.0d-3 ! (Units W/m.K)
-
-  end subroutine set_thermal_conductivity_at_nodes_internal_flow
-
-
-  ! CAUTION: In order to apply correctly this function, laminar viscosity vlp must be known
-  ! in real and fictitious volumes (except CV of corners SW, SE, NW and NE)
-  subroutine get_laminar_viscosity_at_faces_internal_flow( nx, ny, vlp, vle, vln) ! Last two are output
-    implicit none
-    integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(in)  :: vlp ! Laminar viscosity at center of volume P
-    real(8), dimension (nx*ny), intent(out) :: vle ! Laminar viscosity at center of face east
-    real(8), dimension (nx*ny), intent(out) :: vln ! Laminar viscosity at center of face north
-
-    ! Auxiliary variables
-    integer :: i, j, np, npe, npn
-
-    do j = 2, ny-1
-       do i = 1, nx-1
-          np   = nx * (j-1) + i
-          npe  = np + 1
-
-          vle(np) = 2.d0 * vlp(np) * vlp(npe) / ( vlp(np) + vlp(npe) )
-
-       end do
-    end do
-
-    do i = 2, nx-1
-       do j = 1, ny-1
-          np  = nx * (j-1) + i
-          npn = np + nx
-
-          vln(np) = 2.d0 * vlp(np) * vlp(npn) / ( vlp(np) + vlp(npn) )
-
-       end do
-    end do
-
-  end subroutine get_laminar_viscosity_at_faces_internal_flow
-
-
-  ! CAUTION: In order to apply correctly this function, thermal conductivity kp must be known
-  ! in real and fictitious volumes (except CV of corners SW, SE, NW and NE)
-  subroutine get_thermal_conductivity_at_faces_internal_flow( nx, ny, kp, ke, kn) ! Output: last two entries
-    implicit none
-    integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(in)  :: kp ! Thermal conductivity at center of volume P
-    real(8), dimension (nx*ny), intent(out) :: ke ! Thermal conductivity at center of face east
-    real(8), dimension (nx*ny), intent(out) :: kn ! Thermal conductivity at center of face north
-
-    ! Auxiliary variables
-    integer :: i, j, np, npe, npn
-
-    do j = 2, ny-1
-       do i = 1, nx-1
-          np   = nx * (j-1) + i
-          npe  = np + 1
-
-          ke(np) = 2.d0 * kp(np) * kp(npe) / ( kp(np) + kp(npe) )
-
-       end do
-    end do
-
-    do i = 2, nx-1
-       do j = 1, ny-1
-          np  = nx * (j-1) + i
-          npn = np + nx
-
-          kn(np) = 2.d0 * kp(np) * kp(npn) / ( kp(np) + kp(npn) )
-
-       end do
-    end do
-
-  end subroutine get_thermal_conductivity_at_faces_internal_flow
-
-  subroutine set_bcu( nx, ny, modvis, x, xp, u, au, b) ! Output: last two entries
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    integer, intent(in) :: modvis ! modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
-    real(8), dimension (nx*ny),   intent(in)  :: x  ! Coord. x of the northest corner of volume P
-    real(8), dimension (nx*ny),   intent(in)  :: xp ! X coord. of the centroid of volume P
-    real(8), dimension (nx*ny),   intent(in)  :: u  ! Cartesian velocity of the last iteraction
-    real(8), dimension (nx*ny,9), intent(out) :: au ! Coefficients of the linear system for u
-    real(8), dimension (nx*ny),   intent(out) :: b  ! Source vector of the linear system
+    integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
+    integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
+    integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
+    real(8), dimension (nx*ny),   intent(in)  :: x  !< Coord. x of the northest corner of volume P
+    real(8), dimension (nx*ny),   intent(in)  :: xp !< X coord. of the centroid of volume P
+    real(8), dimension (nx*ny),   intent(in)  :: xk !< x_csi at center of face north
+    real(8), dimension (nx*ny),   intent(in)  :: yk !< y_csi at center of face north
+    real(8), dimension (nx*ny),   intent(in)  :: u  !< Cartesian velocity of the last iteraction
+    real(8), dimension (nx*ny),   intent(in)  :: v  !< Cartesian velocity of the last iteraction
+    real(8), dimension (nx*ny,9), intent(out) :: au !< Coefficients of the linear system for u
+    real(8), dimension (nx*ny),   intent(out) :: b  !< Source vector of the linear system
     ! Auxiliary variables
     integer :: i, j, np, npe, npee, npw, npww
+
+    real(8), dimension(nx) :: ubn ! Cartesian velocity on north boundary
+    real(8), dimension(nx) :: vbn ! Cartesian velocity on south boundary
 
     ! West boundary (corners are not included)
     i = 1
@@ -217,30 +79,40 @@ contains
           b(np) = 0.d0
        end do
     else ! Euler
+       ! Calculates u and v on north boundary assuming slip
+       ! boundary condition.
+       call get_u_v_north_slip(nx, ny, x, xp, xk, yk, u, v, ubn, vbn) ! Output: last two
+
        do i = 1, nx
           np   = nx * (j-1) + i
 
           au(np,:) =  0.d0
-          au(np,2) = -1.d0
+          au(np,2) =  1.d0
           au(np,5) =  1.d0
 
-          b(np) = 0.d0
+          b(np) = 2.d0 * ubn(i)
        end do
     end if
   end subroutine set_bcu
 
-  subroutine set_bcv( nx, ny, modvis, x, xp, v, av, b) ! Output: last two entries
+  subroutine set_bcv( nx, ny, modvis, x, xp, xk, yk, u, v, av, b) ! Output: last two entries
     implicit none
-    integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
-    integer, intent(in) :: modvis ! modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
-    real(8), dimension (nx*ny),   intent(in)  :: x  ! Coord. x of the northest corner of volume P
-    real(8), dimension (nx*ny),   intent(in)  :: xp ! X coord. of the centroid of volume P
-    real(8), dimension (nx*ny),   intent(in)  :: v  ! Cartesian velocity of the last iteraction
-    real(8), dimension (nx*ny,9), intent(out) :: av ! Coefficients of the linear system for v
-    real(8), dimension (nx*ny),   intent(out) :: b  ! Source vector of the linear system
+    integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
+    integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
+    integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
+    real(8), dimension (nx*ny),   intent(in)  :: x  !< Coord. x of the northest corner of volume P
+    real(8), dimension (nx*ny),   intent(in)  :: xp !< X coord. of the centroid of volume P
+    real(8), dimension (nx*ny),   intent(in)  :: xk !< x_csi at center of face north
+    real(8), dimension (nx*ny),   intent(in)  :: yk !< y_csi at center of face north
+    real(8), dimension (nx*ny),   intent(in)  :: u  !< Cartesian velocity of the last iteraction
+    real(8), dimension (nx*ny),   intent(in)  :: v  !< Cartesian velocity of the last iteraction
+    real(8), dimension (nx*ny,9), intent(out) :: av !< Coefficients of the linear system for v
+    real(8), dimension (nx*ny),   intent(out) :: b  !< Source vector of the linear system
+
     ! Auxiliary variables
     integer :: i, j, np, npe, npee, npw, npww
+    real(8), dimension(nx) :: ubn ! Cartesian velocity on north boundary
+    real(8), dimension(nx) :: vbn ! Cartesian velocity on south boundary
 
     ! West boundary (corners are not included)
     i = 1
@@ -296,17 +168,95 @@ contains
           b(np) = 0.d0
        end do
     else ! Euler
+       ! Calculates u and v on north boundary assuming slip
+       ! boundary condition.
+       call get_u_v_north_slip(nx, ny, x, xp, xk, yk, u, v, ubn, vbn) ! Output: last two
+
        do i = 1, nx
           np   = nx * (j-1) + i
 
           av(np,:) =  0.d0
-          av(np,2) = -1.d0
+          av(np,2) =  1.d0
           av(np,5) =  1.d0
 
-          b(np) = 0.d0
+          b(np) = 2.d0 * vbn(i)
        end do
     end if
   end subroutine set_bcv
+
+
+  !> \brief Calculates u and v on north boundary assuming slip
+  !! boundary condition.
+  subroutine get_u_v_north_slip(nx, ny, x, xp, xk, yk, u, v, ubn, vbn) ! Output: last two
+   implicit none
+   integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
+   integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
+   real(8), dimension(nx*ny), intent(in)  :: x   !< Coord. x of the northest corner of volume P
+   real(8), dimension(nx*ny), intent(in)  :: xp  !< X coord. of the centroid of volume P
+   real(8), dimension(nx*ny), intent(in)  :: xk  !< x_csi at center of face north
+   real(8), dimension(nx*ny), intent(in)  :: yk  !< y_csi at center of face north
+   real(8), dimension(nx*ny), intent(in)  :: u   !< Cartesian velocity of the present iteraction
+   real(8), dimension(nx*ny), intent(in)  :: v   !< Cartesian velocity of the present iteraction
+   real(8), dimension(nx),    intent(out) :: ubn !< Cartesian velocity on north boundary
+   real(8), dimension(nx),    intent(out) :: vbn !< Cartesian velocity on south boundary
+
+   ! Inner variables
+   integer :: i, j, np, npe, npw, npee, npww
+   real(8) :: signal, tx, ty, t, Up
+
+   j = ny-1
+
+   do i = 2, nx-1
+
+      np   = nx * (j-1) + i
+
+      ! Calculating the modulus of vec(u) at P
+      Up = sqrt(u(np)**2+v(np)**2)
+
+      ! Is (u,v) pointing toward (xk,yk) or backward (xk,yk)?
+      ! To discover that, calculates the dot product and gets its signal.
+      ! SIGN(A,B) returns the value of A with the sign of B
+      signal = sign(1.d0, xk(np) * u(np) + yk(np) * v(np) )
+
+      ! Getting the unitary vector t tangent to the wall
+      t  = sqrt( xk(np)**2 + yk(np)**2 )
+
+      tx = xk(np) / t
+      ty = yk(np) / t
+
+      ! Calculating the velocity vector on the wall
+      ubn(i) = signal * Up * tx
+      vbn(i) = signal * Up * ty
+
+      ! Note that this vector has the same modulus that (u,v)_P and points
+      ! in a direction locally tangent to the wall. Having the same modulus
+      ! on P ensures that the total enthalpy will be conserved on this cell.
+
+   end do
+
+   ! Extrapolating the velocity to the fictitious of west boundary
+   i = 1
+   j = ny-1
+   np   = nx * (j-1) + i
+   npe  = np + 1
+   npee = npe + 1
+
+   ubn(1) = ubn(2) + (ubn(2)-ubn(3)) * (xp(npe)-x(np))/(xp(npee)-xp(npe))
+   vbn(1) = vbn(2) + (vbn(2)-vbn(3)) * (xp(npe)-x(np))/(xp(npee)-xp(npe))
+
+
+   ! Extrapolating the velocity to the fictitious of east boundary
+   i = nx
+   j = ny-1
+   np   = nx * (j-1) + i
+   npw  = np - 1
+   npww = npw - 1
+
+   ubn(nx) = ubn(nx-1) + (ubn(nx-1)-ubn(nx-2)) * (x(npw)-xp(npw))/(xp(npw)-xp(npww))
+   vbn(nx) = vbn(nx-1) + (vbn(nx-1)-vbn(nx-2)) * (x(npw)-xp(npw))/(xp(npw)-xp(npww))
+
+  end subroutine
+
 
   ! CAUTION: Twall must be difined in the fictitious volumes too
   subroutine set_bcT( nx, ny, ccTw, x, xp, Tin, Twall, T, at, b) ! Output: last two entries
@@ -610,18 +560,24 @@ contains
   end subroutine get_plin_and_p_fictitious
 
 
-  subroutine get_u_v_at_fictitious_nodes_with_pl( nx, ny, modvis, x, xp, u, v) ! InOutput: last two entries
+  ! Extrapolates u and v to boundary according to boundary conditions
+  subroutine get_u_v_at_fictitious_nodes_with_pl( nx, ny, modvis, x, xp, xk, yk, u, v) ! InOutput: last two entries
     implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    integer, intent(in) :: modvis ! modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
-    real(8), dimension (nx*ny), intent(in)    :: x  ! Coord. x of the northest corner of volume P
-    real(8), dimension (nx*ny), intent(in)    :: xp ! Coord. x of the centroid of volume P
-    real(8), dimension (nx*ny), intent(inout) :: u  ! Cartesian velocity
-    real(8), dimension (nx*ny), intent(inout) :: v  ! Cartesian velocity
+    integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
+    integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
+    integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
+    real(8), dimension (nx*ny), intent(in)    :: x  !< Coord. x of the northest corner of volume P
+    real(8), dimension (nx*ny), intent(in)    :: xp !< Coord. x of the centroid of volume P
+    real(8), dimension (nx*ny), intent(in)    :: xk !< x_csi at center of face north
+    real(8), dimension (nx*ny), intent(in)    :: yk !< y_csi at center of face north
+    real(8), dimension (nx*ny), intent(inout) :: u  !< Cartesian velocity
+    real(8), dimension (nx*ny), intent(inout) :: v  !< Cartesian velocity
 
     ! Auxiliary variables
     integer :: i, j, np, npe, npee, npw, npww, nps, npn
+
+    real(8), dimension(nx) :: ubn ! Cartesian velocity on north boundary
+    real(8), dimension(nx) :: vbn ! Cartesian velocity on south boundary
 
     ! West boundary
     i = 1
@@ -675,85 +631,24 @@ contains
 
     else ! Inviscid
 
+       ! Calculates u and v on north boundary using slip boundary condition
+       call get_u_v_north_slip(nx, ny, x, xp, xk, yk, u, v, ubn, vbn) ! Output: last two
+
        do i = 1, nx
           np   = nx * (j-1) + i
           nps  = np - nx
 
-          u(np) = u(nps)
-          v(np) = v(nps)
+          u(np) = -u(nps) + 2.d0 * ubn(i)
+          v(np) = -v(nps) + 2.d0 * vbn(i)
 
        end do
 
     end if
   end subroutine get_u_v_at_fictitious_nodes_with_pl
 
-  subroutine get_boundary_simplec_coefficients_internal_flow( nx, ny, de, dn) ! InOutput: de, dn
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(inout) :: de  ! SIMPLEC coefficient for Uce
-    real(8), dimension (nx*ny), intent(inout) :: dn  ! SIMPLEC coefficient for Vcn
-
-    ! Auxiliary variables
-    integer :: i, j, np, npe, npw
-
-    ! West boundary
-
-    i = 1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npe  = np + 1
-
-       de(np) = de(npe)
-
-    end do
-
-    ! East boundary
-
-    i = nx-1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npw  = np - 1
-
-       de(np) = de(npw)
-
-    end do
-
-    ! South boundary
-
-    j = 1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       dn(np) = 0.d0
-
-    end do
-
-    ! North boundary
-
-    j = ny-1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       dn(np) = 0.d0
-
-    end do
-
-  end subroutine get_boundary_simplec_coefficients_internal_flow
-
      ! Calculates the SIMPLEC coefficients at the boundary faces
-   subroutine get_boundary_simplec_coefficients_internal_flow2( nx, ny, modvis, due, dve, dun &
-         , dvn, de, dn) ! InOutput: last 6
+   subroutine get_boundary_simplec_coefficients( nx, ny, modvis & ! Input
+         ,                           due, dve, dun, dvn, de, dn ) ! InOutput: last 6
       implicit none
       integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
@@ -824,26 +719,6 @@ contains
 
       ! North boundary
 
-      if ( modvis == 0 ) then ! Euler
-
-         j = ny-1
-
-         do i = 2, nx-1
-
-            np   = nx * (j-1) + i
-
-            nps  = np - nx
-
-            dun(np) = dun(nps)
-
-            dvn(np) = dvn(nps)
-
-            dn(np) = 0.d0
-
-         end do
-
-      else ! NS
-
          j = ny-1
 
          do i = 2, nx-1
@@ -858,183 +733,35 @@ contains
 
          end do
 
-      end if
+   end subroutine get_boundary_simplec_coefficients
 
-   end subroutine get_boundary_simplec_coefficients_internal_flow2
-
-  subroutine get_ue_un_ve_vn_at_boundary_faces( nx, ny, u, v, ue, un, ve, vn) ! InOutput: ue, un, ve, vn
+   subroutine get_velocities_at_boundary_faces( nx, ny, modvis & ! Input
+       ,                           x, xp, xe, ye, xk, yk, u, v & ! Input
+       ,                              ue, ve, un, vn, Uce, Vcn ) ! Input and Output
     implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(in)    :: u    !< Cartesian velocity of the last iteraction
-    real(8), dimension (nx*ny), intent(in)    :: v    !< Cartesian velocity of the last iteraction
-    real(8), dimension (nx*ny), intent(inout) :: ue   ! Cartesian velocity u at center of east face
-    real(8), dimension (nx*ny), intent(inout) :: ve   ! Cartesian velocity v at center of east face
-    real(8), dimension (nx*ny), intent(inout) :: un   ! Cartesian velocity u at center of north face
-    real(8), dimension (nx*ny), intent(inout) :: vn   ! Cartesian velocity v at center of north face
-
-
-    ! Auxiliary variables
-    integer :: i, j, np, npe, npn
-
-    ! West boundary
-
-    i = 1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npe  = np + 1
-
-       ve(np) = 0.d0
-
-       ue(np) = (u(np)+u(npe))/2.d0
-
-    end do
-
-    ! East boundary
-
-    i = nx-1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npe  = np + 1
-
-       ve(np) = (v(np)+v(npe))/2.d0
-
-       ue(np) = (u(np)+u(npe))/2.d0
-
-    end do
-
-    ! South boundary
-
-    j = 1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       npn  = np + nx
-
-       vn(np) = 0.d0
-
-       un(np) = (u(np)+u(npn))/2.d0
-
-    end do
-
-
-    ! North boundary
-
-    j = ny-1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       npn  = np + nx
-
-       vn(np) = v(np)
-
-       un(np) = u(np)
-
-    end do
-
-  end subroutine get_ue_un_ve_vn_at_boundary_faces
-
-
-
-
-  subroutine get_Uce_Vcn_at_boundary_faces( nx, ny, ye, u, Uce, Vcn) ! Output: Uce, Vcn
-    implicit none
-    integer, intent(in) :: nx  ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny  ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(in)    :: ye  ! y_eta at face east of volume P
-    real(8), dimension (nx*ny), intent(in)    :: u   ! Cartesian velocity of the last iteraction
-    real(8), dimension (nx*ny), intent(out)   :: Uce ! Contravariant velocity U at east face
-    real(8), dimension (nx*ny), intent(out)   :: Vcn ! Contravariant velocity V at north face
-
-    ! Auxiliary variables
-    integer :: i, j, np, npe, npw
-
-    ! West boundary
-
-    i = 1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npe  = np + 1
-
-       Uce(np) = 0.5d0 * ( u(npe) + u(np) ) * ye(np)
-
-    end do
-
-    ! East boundary
-
-    i = nx-1
-
-    do j = 2, ny-1
-
-       np   = nx * (j-1) + i
-
-       npw  = np - 1
-
-       npe  = np + 1
-
-       Uce(np) = 0.5d0 * ( u(npe) + u(np) ) * ye(np)
-
-    end do
-
-    ! South boundary
-
-    j = 1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       Vcn(np) = 0.d0
-
-    end do
-
-    ! North boundary
-
-    j = ny-1
-
-    do i = 2, nx-1
-
-       np   = nx * (j-1) + i
-
-       Vcn(np) = 0.d0
-
-    end do
-
-  end subroutine get_Uce_Vcn_at_boundary_faces
-
-    subroutine get_velocities_at_boundary_faces_internal_flow( nx, ny, xe, ye, xk, yk, u, v  & ! Input
-       ,                                       ue, ve, un, vn, Uce, Vcn )      ! Input and Output
-    implicit none
-    integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
-    integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
-    real(8), dimension (nx*ny), intent(in)    :: xe  ! x_eta at center of face east
-    real(8), dimension (nx*ny), intent(in)    :: ye  ! y_eta at center of face east
-    real(8), dimension (nx*ny), intent(in)    :: xk  ! x_csi at center of face north
-    real(8), dimension (nx*ny), intent(in)    :: yk  ! y_csi at center of face north
-    real(8), dimension (nx*ny), intent(in)    :: u   ! Cartesian velocity of the present iteraction
-    real(8), dimension (nx*ny), intent(in)    :: v   ! Cartesian velocity of the present iteraction
-    real(8), dimension (nx*ny), intent(inout) :: ue  ! Cartesian velocity u at center of east face
-    real(8), dimension (nx*ny), intent(inout) :: ve  ! Cartesian velocity v at center of east face
-    real(8), dimension (nx*ny), intent(inout) :: un  ! Cartesian velocity u at center of north face
-    real(8), dimension (nx*ny), intent(inout) :: vn  ! Cartesian velocity v at center of north face
-    real(8), dimension (nx*ny), intent(inout) :: Uce ! Contravariant velocity U at east face
-    real(8), dimension (nx*ny), intent(inout) :: Vcn ! Contravariant velocity V at north face
+    integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
+    integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
+    integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
+    real(8), dimension (nx*ny),   intent(in)  :: x   !< Coord. x of the northest corner of volume P
+    real(8), dimension (nx*ny),   intent(in)  :: xp  !< X coord. of the centroid of volume P
+    real(8), dimension (nx*ny), intent(in)    :: xe  !< x_eta at center of face east
+    real(8), dimension (nx*ny), intent(in)    :: ye  !< y_eta at center of face east
+    real(8), dimension (nx*ny), intent(in)    :: xk  !< x_csi at center of face north
+    real(8), dimension (nx*ny), intent(in)    :: yk  !< y_csi at center of face north
+    real(8), dimension (nx*ny), intent(in)    :: u   !< Cartesian velocity of the present iteraction
+    real(8), dimension (nx*ny), intent(in)    :: v   !< Cartesian velocity of the present iteraction
+    real(8), dimension (nx*ny), intent(inout) :: ue  !< Cartesian velocity u at center of east face
+    real(8), dimension (nx*ny), intent(inout) :: ve  !< Cartesian velocity v at center of east face
+    real(8), dimension (nx*ny), intent(inout) :: un  !< Cartesian velocity u at center of north face
+    real(8), dimension (nx*ny), intent(inout) :: vn  !< Cartesian velocity v at center of north face
+    real(8), dimension (nx*ny), intent(inout) :: Uce !< Contravariant velocity U at east face
+    real(8), dimension (nx*ny), intent(inout) :: Vcn !< Contravariant velocity V at north face
 
     ! Auxiliary variables
     integer :: i, j, np, npn, npe
+
+    real(8), dimension(nx) :: ubn ! Cartesian velocity on north boundary
+    real(8), dimension(nx) :: vbn ! Cartesian velocity on south boundary
 
     ! West
     i = 1
@@ -1081,21 +808,29 @@ contains
 
     end do
 
+    ! North boundary
+
+    if ( modvis == 0) then ! Euler
+       call get_u_v_north_slip(nx, ny, x, xp, xk, yk, u, v, ubn, vbn) ! Output: last two
+    else ! NS
+       ubn = 0.d0
+       vbn = 0.d0
+    end if
+
     j = ny-1
     do i = 2, nx-1
 
        np   = nx * (j-1) + i
        npn  = np + nx
 
-       un(np) = ( u(np) + u(npn) ) / 2.d0
-
-       vn(np) = ( v(np) + v(npn) ) / 2.d0
+       un(np) = ubn(i)
+       vn(np) = vbn(i)
 
        Vcn(np) = 0.d0
 
     end do
 
-  end subroutine get_velocities_at_boundary_faces_internal_flow
+  end subroutine get_velocities_at_boundary_faces
 
 
   subroutine get_Uce_Vcn_at_boundary_faces_with_pl( nx, ny, pl, de, Uce) ! InOutput: Last entry
@@ -1209,11 +944,11 @@ contains
   end subroutine get_mach_area
 
 
-  subroutine get_initial_guess( nx, ny, modvis, beta, po, T0, gamma      & ! Input
-       ,                        Rg, Sg, ye, yk, radius, rn, x, y, xp     & ! Input
-       ,                        M1D, p1D, T1D, u1D, p, T, u, v, ue       & ! Output
-       ,                        un, Uce, Vcn, uin, vin, pin, Tin, Mw     & ! Output
-       ,                        fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron)   ! Output
+  subroutine get_initial_guess( nx, ny, modvis, beta, po, T0, gamma, Rg  & ! Input
+       ,                        Sg, xe, ye, xk, yk, radius, rn, x, y, xp & ! Input
+       ,                        M1D, p1D, T1D, u1D, p, T, u, v, ue, ve   & ! Output
+       ,                        un, vn, Uce, Vcn, uin, vin, pin, Tin, Mw & ! Output
+       ,                                 fm1D, Fd1D, Fpv1D, ro, roe, ron ) ! Output
     implicit none
     integer, intent(in) :: nx     ! Number of volumes in csi direction (real+fictitious)
     integer, intent(in) :: ny     ! Number of volumes in eta direction (real+fictitious)
@@ -1224,8 +959,10 @@ contains
     real(8), intent(in) :: gamma  ! gamma = Cpo / Cvo in the chamber
     real(8), intent(in) :: Rg     ! Perfect gas constant
     real(8), intent(in) :: Sg     ! Throttle area
+    real(8), dimension(nx*ny), intent(in) :: xe     ! x_eta at center of face east
     real(8), dimension(nx*ny), intent(in) :: ye     ! y_eta at face east of volume P
-    real(8), dimension(nx*ny), intent(in) :: yk     ! y_csi at face north of volume P
+    real(8), dimension(nx*ny), intent(in) :: xk     !< x_csi at center of face north
+    real(8), dimension(nx*ny), intent(in) :: yk     !< y_csi at center of face north
     real(8), dimension(nx*ny), intent(in) :: radius ! Radius of northest corner of volume P
     real(8), dimension(nx*ny), intent(in) :: rn     ! Radius of the center of north face of volume P
     real(8), dimension(nx*ny), intent(in) :: x      ! Coord. x of the northest corner of volume P
@@ -1247,7 +984,9 @@ contains
     real(8), dimension(nx*ny), intent(out) :: v   ! Cartesian velocity of the last iteraction
 
     real(8), dimension(nx*ny), intent(out) :: ue  ! Cartesian velocity u at center of east face
+    real(8), dimension(nx*ny), intent(out) :: ve  !< Cartesian velocity v at center of east face (m/s)
     real(8), dimension(nx*ny), intent(out) :: un  ! Cartesian velocity u at center of north face
+    real(8), dimension(nx*ny), intent(out) :: vn  !< Cartesian velocity v at center of north face (m/s)
     real(8), dimension(nx*ny), intent(out) :: Uce ! Contravariant velocity U at east face
     real(8), dimension(nx*ny), intent(out) :: Vcn ! Contravariant velocity V at north face
 
@@ -1256,9 +995,6 @@ contains
     real(8), dimension (ny),   intent(out) :: pin ! Pressure in the entrance
     real(8), dimension (ny),   intent(out) :: Tin ! Temperature in the entrance
     real(8), dimension (ny),   intent(out) :: Mw  ! Mach number in the entrance
-
-    real(8), dimension(nx*ny), intent(out) :: de  ! Simplec coef. for the contravariant velocity U (east face)
-    real(8), dimension(nx*ny), intent(out) :: dn  ! Simplec coef. for the contravariant velocity V (north face)
 
     real(8), dimension(nx*ny), intent(out) :: ro  ! Specific mass (absolute density) at center of volumes
     real(8), dimension(nx*ny), intent(out) :: roe ! Absolute density at east face
@@ -1323,7 +1059,7 @@ contains
     end do
 
     ! Calculates u and v at fictitious nodes using boundary conditions
-    call get_u_v_at_fictitious_nodes_with_pl( nx, ny, modvis, x, xp, u, v) ! InOutput: last two entries
+    call get_u_v_at_fictitious_nodes_with_pl( nx, ny, modvis, x, xp, xk, yk, u, v) ! InOutput: last two entries
 
     ! Calculates gas proprieties in the entrance
     call get_uin_vin_pin_Tin_Mw( nx, ny, gamma, Rg, po, T0, u & ! Input
@@ -1444,11 +1180,11 @@ contains
 
     end do
 
-    ! Contravariant velocities at boundary faces
-    call get_Uce_Vcn_at_boundary_faces( nx, ny, ye, u, Uce, Vcn) ! Output: Uce, Vcn
+    ! Calculates velocities on boundaries according bc
+    call get_velocities_at_boundary_faces( nx, ny, modvis & ! Input
+       ,                      x, xp, xe, ye, xk, yk, u, v & ! Input
+       ,                         ue, ve, un, vn, Uce, Vcn ) ! Input and Output
 
-    ! Simplec coefficients at boundary faces
-    call get_boundary_simplec_coefficients_internal_flow( nx, ny, de, dn) ! InOutput: de, dn
 
     ! Specific mass at nodes
     call get_density_at_nodes( nx, ny, Rg, p, T, ro) ! ro is output
@@ -1589,116 +1325,6 @@ contains
 
   end subroutine get_boundary_nodes
 
-
-   !> \brief Calculates the temperature based on the conservation of the total enthalpy
-   !! Valid for Euler model with constant thermo-physical coefficients.
-   !! Temperature is extrapolated to fictitious volumes with CDS the scheme
-   subroutine get_T_from_H_conservation_internal_flow(nx, ny, CPF, HF, u, ue, un, v, ve, vn, T, Tbe, Tbw, Tbn, Tbs) ! Output: last 5
-      implicit none
-      integer, intent(in) :: nx  !< Number of volumes in csi direction (real+fictitious)
-      integer, intent(in) :: ny  !< Number of volumes in eta direction (real+fictitious)
-      real(8), intent(in) :: CPF !< Free stream Cp (J/kg.K)
-      real(8), intent(in) :: HF  !< Free stream total enthalpy (m2/s2)
-      real(8), dimension (nx*ny), intent(in)  :: u    !< Cartesian velocity at P
-      real(8), dimension (nx*ny), intent(in)  :: ue   !< Cartesian velocity u at center of east face
-      real(8), dimension (nx*ny), intent(in)  :: un   !< Cartesian velocity u at center of north face
-      real(8), dimension (nx*ny), intent(in)  :: v    !< Cartesian velocity at P
-      real(8), dimension (nx*ny), intent(in)  :: ve   !< Cartesian velocity v at center of east face
-      real(8), dimension (nx*ny), intent(in)  :: vn   !< Cartesian velocity v at center of north face
-      real(8), dimension (nx*ny), intent(out) :: T    !< Temperature at P
-      real(8), dimension (ny),    intent(out) :: Tbe  !< Temperature over the  east boundary (K)
-      real(8), dimension (ny),    intent(in) :: Tbw  !< Temperature over the  west boundary (K)
-      real(8), dimension (nx),    intent(out) :: Tbn  !< Temperature over the north boundary (K)
-      real(8), dimension (nx),    intent(out) :: Tbs  !< Temperature over the south boundary (K)
-
-      ! Inner variables
-
-      integer :: i, j, np, npe, npn
-
-
-
-      ! Temperature on the nodes
-
-      T = ( HF - (u**2+v**2) / 2.d0 ) / CPF
-
-
-      ! Temperature on the east boundary
-
-      i = nx-1
-
-      do j = 2, ny-1
-
-         np   = nx * (j-1) + i
-
-         Tbe(j) = ( HF - (ue(np)**2+ve(np)**2) / 2.d0 ) / CPF
-
-         ! Extrapolating to fictitious
-
-         npe  = np + 1
-
-         T(npe) = 2.d0 * Tbe(j) - T(np)
-
-      end do
-
-
-      ! Temperature on the west boundary
-
-      i = 1
-
-      do j = 2, ny-1
-
-         np   = nx * (j-1) + i
-
-         !Tbw(j) = ( HF - (ue(np)**2+ve(np)**2) / 2.d0 ) / CPF
-
-         ! Extrapolating to fictitious
-
-         npe  = np + 1
-
-         T(np) = 2.d0 * Tbw(j) - T(npe)
-
-      end do
-
-
-      ! Temperature on the north boundary
-
-      j = ny-1
-
-      do i = 2, nx-1
-
-         np   = nx * (j-1) + i
-
-         Tbn(i) = ( HF - (un(np)**2+vn(np)**2) / 2.d0 ) / CPF
-
-         ! Extrapolating to fictitious
-
-         npn  = np + nx
-
-         T(npn) = 2.d0 * Tbn(i) - T(np)
-
-      end do
-
-
-      ! Temperature on the north boundary
-
-      j = 1
-
-      do i = 2, nx-1
-
-         np   = nx * (j-1) + i
-
-         Tbs(i) = ( HF - (un(np)**2+vn(np)**2) / 2.d0 ) / CPF
-
-         ! Extrapolating to fictitious
-
-         npn  = np + nx
-
-         T(np) = 2.d0 * Tbs(i) - T(npn)
-
-      end do
-
-
-   end subroutine get_T_from_H_conservation_internal_flow
 
   subroutine get_mass_flow_rate_and_thrust( nx, ny, re, roe, u, Uce, fmi, fme, Fd)
     implicit none

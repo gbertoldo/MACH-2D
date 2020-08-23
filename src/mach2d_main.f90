@@ -59,10 +59,10 @@ program main
    else
       !> \brief Calculates initial conditions for internal flow
       call intflow_initial_conditions( nx, ny, modvis, beta & ! Input
-         ,        thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
+         ,thermomodel, xe, ye, xk, yk, radius, rn, x, y, xp & ! Input
          ,                                            iflow & ! InOutput
          ,             p, T, u, v, ue, un, ve, vn, Uce, Vcn & ! Output
-         ,         de, dn, ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
+         ,                 ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
 
    end if
 
@@ -182,7 +182,7 @@ program main
             call extflow_set_bcu(nx, ny, modvis, xk, yk, alphae, betae, u, v & ! Intput
                ,                                                      au, bu ) ! Output
          else
-            call intflow_set_bcu(nx, ny, modvis, x, xp, u, au, bu) ! Output: last two
+            call intflow_set_bcu(nx, ny, modvis, x, xp, xk, yk, u, v, au, bu) ! Output: last two
          end if
 
 
@@ -203,7 +203,7 @@ program main
          if ( kflow == EXTERNAL_FLOW ) then
             call extflow_set_bcv(nx, ny, modvis, xk, yk, u, v, av, bv ) ! Output: last two
          else
-            call intflow_set_bcv(nx, ny, modvis, x, xp, v, av, bv) ! Output: last two
+            call intflow_set_bcv(nx, ny, modvis, x, xp, xk, yk, u, v, av, bv) ! Output: last two
          end if
 
 
@@ -248,9 +248,9 @@ program main
             call extflow_velocities_at_boundary_faces( nx, ny, xe, ye, xk, yk, u, v & ! Input
                ,                                           ue, ve, un, vn, Uce, Vcn ) ! Output
          else
-            call intflow_velocities_at_boundary_faces(nx, ny, ye, u, v & ! Input
-               ,                                        ue, ve, un, vn & ! InOutput
-               ,                                              Uce, Vcn ) ! Output
+            call intflow_velocities_at_boundary_faces( nx, ny, modvis & ! Input
+               ,                          x, xp, xe, ye, xk, yk, u, v & ! Input
+               ,                             ue, ve, un, vn, Uce, Vcn ) ! Input and Output
          end if
 
 
@@ -287,9 +287,9 @@ program main
 
             ! Correcting boundary velocities and pressure field
             if ( kflow == INTERNAL_FLOW ) then
-               call intflow_velocities_at_boundary_faces(nx, ny, ye, u, v & ! Input
-                  ,                                        ue, ve, un, vn & ! InOutput
-                  ,                                              Uce, Vcn ) ! Output
+               call intflow_velocities_at_boundary_faces( nx, ny, modvis & ! Input
+                  ,                          x, xp, xe, ye, xk, yk, u, v & ! Input
+                  ,                             ue, ve, un, vn, Uce, Vcn ) ! Input and Output
 
                ! Pressure correction  (SIMPLEC method)
                call get_pressure_correction_with_pl( nx, ny, pl, p) ! InOutput: last two
@@ -341,7 +341,8 @@ program main
             call extflow_extrapolate_u_v_to_fictitious(nx, ny, modvis, itemax &
                ,                                  xk, yk, alphae, betae, u, v ) ! InOutput: last two
          else
-            call intflow_extrapolate_u_v_to_fictitious( nx, ny, modvis, x, xp, u, v) ! InOutput: last two
+            call intflow_extrapolate_u_v_to_fictitious( nx, ny, modvis &
+               ,                                   x, xp, xk, yk, u, v ) ! InOutput: last two
          end if
 
       end do

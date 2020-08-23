@@ -1,3 +1,3 @@
-"parametersNozzle.txt"  ....: Input parameters data file
+"parametersNozzleEulerPTC.txt"  ....: Input parameters data file
 "parametersNTV.txt"  ....: Input parameters data file
 

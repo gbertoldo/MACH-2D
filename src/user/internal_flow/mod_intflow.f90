@@ -11,9 +11,9 @@ module mod_intflow
 
    use mod_intflow_procedures,    intflow_set_bcu => set_bcu &
       ,                           intflow_set_bcv => set_bcv &
-      ,                  intflow_boundary_simplec => get_boundary_simplec_coefficients_internal_flow2 &
+      ,                  intflow_boundary_simplec => get_boundary_simplec_coefficients &
       ,     intflow_extrapolate_u_v_to_fictitious => get_u_v_at_fictitious_nodes_with_pl &
-      ,         intflow_get_T_from_H_conservation => get_T_from_H_conservation_internal_flow
+      ,      intflow_velocities_at_boundary_faces => get_velocities_at_boundary_faces
 
    implicit none
 
@@ -106,10 +106,10 @@ contains
 
    !> \brief Calculates initial conditions for internal flow
    subroutine intflow_initial_conditions( nx, ny, modvis, beta & ! Input
-      ,              thermomodel, ye, yk, radius, rn, x, y, xp & ! Input
+      ,      thermomodel, xe, ye, xk, yk, radius, rn, x, y, xp & ! Input
       ,                                                  iflow & ! InOutput
       ,                   p, T, u, v, ue, un, ve, vn, Uce, Vcn & ! Output
-      ,               de, dn, ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
+      ,                       ro, roe, ron, Tbn, Tbs, Tbe, Tbw ) ! Output
       integer, intent(in) :: nx     !< Number of volumes in csi direction (real+fictitious)
       integer, intent(in) :: ny     !< Number of volumes in eta direction (real+fictitious)
       integer, intent(in) :: modvis !< modvis = 0 -> Euler;  modvis = 1 -> Navier-Stokes
@@ -117,7 +117,9 @@ contains
 
       class(class_thermophysical_abstract), pointer, intent(in)  :: thermomodel !< A pointer to the thermophysical model
 
+      real(8), dimension(nx*ny), intent(in) :: xe     ! x_eta at center of face east
       real(8), dimension(nx*ny), intent(in) :: ye     !< y_eta at face east of volume P
+      real(8), dimension(nx*ny), intent(in) :: xk     !< x_csi at center of face north
       real(8), dimension(nx*ny), intent(in) :: yk     !< y_csi at face north of volume P
       real(8), dimension(nx*ny), intent(in) :: radius !< Radius of northest corner of volume P
       real(8), dimension(nx*ny), intent(in) :: rn     !< Radius of the center of north face of volume P
@@ -138,9 +140,6 @@ contains
       real(8), dimension(nx*ny), intent(out) :: vn  !< Cartesian velocity v at center of north face (m/s)
       real(8), dimension(nx*ny), intent(out) :: Uce ! Contravariant velocity U at east face
       real(8), dimension(nx*ny), intent(out) :: Vcn ! Contravariant velocity V at north face
-
-      real(8), dimension(nx*ny), intent(out) :: de  ! Simplec coef. for the contravariant velocity U (east face)
-      real(8), dimension(nx*ny), intent(out) :: dn  ! Simplec coef. for the contravariant velocity V (north face)
 
       real(8), dimension(nx*ny), intent(out) :: ro  ! Specific mass (absolute density) at center of volumes
       real(8), dimension(nx*ny), intent(out) :: roe ! Absolute density at east face
@@ -190,11 +189,11 @@ contains
             ,       Fd1D => iflow%Fd1D    &
             ,      Fpv1D => iflow%Fpv1D   )
 
-         call get_initial_guess( nx, ny, modvis, beta, po, T0, gamma      & ! Input
-         ,                       Rg, Sg, ye, yk, radius, rn, x, y, xp     & ! Input
-         ,                       M1D, p1D, T1D, u1D, p, T, u, v, ue       & ! Output
-         ,                       un, Uce, Vcn, uin, vin, pin, Tin, Mw     & ! Output
-         ,                       fm1D, Fd1D, Fpv1D, de, dn, ro, roe, ron  ) ! Output
+         call get_initial_guess( nx, ny, modvis, beta, po, T0, gamma, Rg  & ! Input
+         ,                       Sg, xe, ye, xk, yk, radius, rn, x, y, xp & ! Input
+         ,                       M1D, p1D, T1D, u1D, p, T, u, v, ue, ve   & ! Output
+         ,                       un, vn, Uce, Vcn, uin, vin, pin, Tin, Mw & ! Output
+         ,                               fm1D, Fd1D, Fpv1D, ro, roe, ron  ) ! Output
 
          Tbw = Tin
          Tbs = T1D
@@ -235,30 +234,6 @@ contains
 
       call get_plin_and_p_fictitious( nx, ny, x, xp, iflow%pina, iflow%pin &
          ,                                                   iflow%plin, p ) ! Output: last two entries
-
-   end subroutine
-
-
-   !> \brief Calculates velocities at center of boundary faces according to bc
-   subroutine intflow_velocities_at_boundary_faces(nx, ny, ye, u, v & ! Input
-      ,                                              ue, ve, un, vn & ! InOutput
-      ,                                                    Uce, Vcn ) ! Output
-      implicit none
-      integer,                   intent(in)    :: nx   !< Number of volumes in csi direction (real+fictitious)
-      integer,                   intent(in)    :: ny   !< Number of volumes in eta direction (real+fictitious)
-      real(8), dimension(nx*ny), intent(in)    :: ye   !< y_eta at face east of volume P
-      real(8), dimension(nx*ny), intent(in)    :: u    !< Cartesian velocity of the last iteraction
-      real(8), dimension(nx*ny), intent(in)    :: v    !< Cartesian velocity of the last iteraction
-      real(8), dimension(nx*ny), intent(inout) :: ue   !< Cartesian velocity u at center of east face
-      real(8), dimension(nx*ny), intent(inout) :: ve   !< Cartesian velocity v at center of east face
-      real(8), dimension(nx*ny), intent(inout) :: un   !< Cartesian velocity u at center of north face
-      real(8), dimension(nx*ny), intent(inout) :: vn   !< Cartesian velocity v at center of north face
-      real(8), dimension(nx*ny), intent(out)   :: Uce  !< Contravariant velocity U at east face
-      real(8), dimension(nx*ny), intent(out)   :: Vcn  !< Contravariant velocity V at north face
-
-      call get_ue_un_ve_vn_at_boundary_faces( nx, ny, u, v, ue, un, ve, vn) ! InOutput: ue, un, ve, vn
-
-      call get_Uce_Vcn_at_boundary_faces( nx, ny, ye, u, Uce, Vcn) ! Output: Uce, Vcn
 
    end subroutine
 
