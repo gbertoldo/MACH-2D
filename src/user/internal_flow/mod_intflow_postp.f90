@@ -1,6 +1,6 @@
 module mod_intflow_postp
 
-    use mod_intflow_procedures
+    use mod_intflow
 
     !
     ! SUBROUTINES
@@ -23,7 +23,7 @@ module mod_intflow_postp
     ! 15) post_processing_boundaries
     ! 16) get_stream_function
     !
-    ! Last update: 16 Aug 2020
+    ! Last update: 23 Aug 2020
     !
     character (len = *), parameter, private :: text_editor     = "emacs -nw "
     character (len = *), parameter, private :: graph_viewer    = "evince "

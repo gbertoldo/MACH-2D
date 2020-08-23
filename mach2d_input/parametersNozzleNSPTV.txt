@@ -33,7 +33,7 @@ GRID PARAMETERS
 ===============
                                20 & nxi-2  & Number of real volumes in the csi direction of the coarsest grid
                                10 & nyi-2  & Number of real volumes in the eta direction of the coarsest grid
-                                6 & nmf    & Number of the finest mesh  (1<=nmf)
+                                1 & nmf    & Number of the finest mesh  (1<=nmf)
                                 1 & nmd    & Number of the desired mesh (1<=nmd<=nmf)
                                 2 & kg     & Kind of grid (1=uniform, 2=geometric progression, 3=power law, 4=gp modified, 5=hyperbolic)
                            1.0E00 & avi    & Initial value of the artificial viscosity (only for kg=5)
@@ -41,7 +41,7 @@ GRID PARAMETERS
                            0.3E00 & awf    & Area weighting factor (only for kg=5)
                                 1 & kcm    & Kind of centroid mean (1=simple mean, 2=weighted mean)
                           -0.04d0 & cbl    & The width of the vol. closer to the wall is 'cbl' times the width of the b. layer (if cbl<0, uses a1)
-                             5d-6 & a1     & Width of the vol. closer to the wall (this values is used if cbl < 0)
+                             1d-6 & a1     & Width of the vol. closer to the wall (this values is used if cbl < 0)
 
 Note: boundary layer estimate and kg=5 only work for external flow
 
@@ -91,7 +91,7 @@ TIME-STEP MODEL
 
 THERMOPHYSICAL MODEL
 ====================
-                            CONSTANT & thermo_model          & Thermophysical model (MIXTURE, CONSTANT)
+                           MIXTURE & thermo_model          & Thermophysical model (MIXTURE, CONSTANT)
 
 Parameters of the "MIXTURE" thermophysical model:
 -------------------------------------------------
